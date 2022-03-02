@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 2 September 2022                                     Cloudflare
+Expires: 3 September 2022                                     Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                            1 March 2022
+                                                            2 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 September 2022.
+   This Internet-Draft will expire on 3 September 2022.
 
 Copyright Notice
 
@@ -879,8 +879,8 @@ AggregateShareReq (State 4) -------------------------------->
 
    First, the leader computes a checksum over the set of output shares
    included in the batch window.  The checksum is computed by taking the
-   SHA256 of the nonces for the client reports included in the
-   aggregation, then combining the hash values with a bytewise-XOR
+   SHA256 hash of each nonce from the client reports included in the
+   aggregation, then combining the hash values with a bitwise-XOR
    operation.
 
    Then, for each aggregator endpoint [aggregator] in the parameters

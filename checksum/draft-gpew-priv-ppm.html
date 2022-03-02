@@ -1026,7 +1026,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Geoghegan, et al.</td>
-<td class="center">Expires 2 September 2022</td>
+<td class="center">Expires 3 September 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1039,12 +1039,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-gpew-priv-ppm-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-03-01" class="published">1 March 2022</time>
+<time datetime="2022-03-02" class="published">2 March 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-09-02">2 September 2022</time></dd>
+<dd class="expires"><time datetime="2022-09-03">3 September 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1108,7 +1108,7 @@ be used to collect aggregate data without revealing any individual user's data.<
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 2 September 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 3 September 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2236,9 +2236,9 @@ PPM task, the leader issues an "aggregate-share request" to each helper. The
 helper responds to this request by extracting its aggregate share from its state
 and encrypting it under the collector's HPKE public key.<a href="#section-4.3.2-1" class="pilcrow">¶</a></p>
 <p id="section-4.3.2-2">First, the leader computes a checksum over the set of output shares included in
-the batch window. The checksum is computed by taking the SHA256 of the nonces
-for the client reports included in the aggregation, then combining the hash
-values with a bytewise-XOR operation.<a href="#section-4.3.2-2" class="pilcrow">¶</a></p>
+the batch window. The checksum is computed by taking the SHA256 hash of each
+nonce from the client reports included in the aggregation, then combining the
+hash values with a bitwise-XOR operation.<a href="#section-4.3.2-2" class="pilcrow">¶</a></p>
 <p id="section-4.3.2-3">Then, for each aggregator endpoint <code>[aggregator]</code> in the parameters associated
 with <code>CollectReq.task_id</code> (see <a href="#pa-collect" class="xref">Section 4.4</a>) except its own, the leader sends
 a POST request to <code>[aggregator]/aggregate_share</code> with the following message:<a href="#section-4.3.2-3" class="pilcrow">¶</a></p>
