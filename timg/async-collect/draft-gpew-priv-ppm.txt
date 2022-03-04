@@ -1612,8 +1612,6 @@ AggregateShareReq (State 4) -------------------------------->
 
    *  CollectReq Section 4.4: "message/ppm-collect-req"
 
-   *  CollectResp Section 4.4: "message/ppm-collect-resp"
-
    *  CollectResult Section 4.4: "message/ppm-collec-result"
 
    The definition for each media type is in the following subsections.
