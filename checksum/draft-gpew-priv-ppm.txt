@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 3 September 2022                                     Cloudflare
+Expires: 5 September 2022                                     Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                            2 March 2022
+                                                            4 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 September 2022.
+   This Internet-Draft will expire on 5 September 2022.
 
 Copyright Notice
 
@@ -876,6 +876,9 @@ AggregateShareReq (State 4) -------------------------------->
    request" to each helper.  The helper responds to this request by
    extracting its aggregate share from its state and encrypting it under
    the collector's HPKE public key.
+
+   [OPEN ISSUE: consider updating the checksum algorithm to not permit
+   collisions]
 
    First, the leader computes a checksum over the set of output shares
    included in the batch window.  The checksum is computed by taking the
