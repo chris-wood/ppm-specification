@@ -1501,7 +1501,7 @@ client's input.<a href="#section-1.2-3.34.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-1.2-4">This document uses the protocol definition language of <span>[<a href="#RFC8446" class="xref">RFC8446</a>]</span>.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
+<p id="section-1.2-4">This document uses the presentation language of <span>[<a href="#RFC8446" class="xref">RFC8446</a>]</span>.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1967,7 +1967,7 @@ struct {
 key config of the aggregator receiving the input share.<a href="#section-4.2.2-7.1" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-4.2.2-7.2">
-              <code>enc</code> is the encapsulated HPKE context, used by the aggregator to decrypt its
+              <code>enc</code> is the HPKE encapsulated key, used by the aggregator to decrypt its
 input share.<a href="#section-4.2.2-7.2" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-4.2.2-7.3">
@@ -1986,9 +1986,9 @@ enc, context = SetupBaseS(pk,
 </div>
 <p id="section-4.2.2-10">where <code>pk</code> is the aggregator's public key, <code>task_id</code> is <code>Report.task_id</code> and
 <code>server_role</code> is a byte whose value is <code>0x01</code> if the aggregator is the leader
-and <code>0x00</code> if the aggregator is the helper. <code>enc</code> is the encapsulated HPKE
-context and <code>context</code> is the HPKE context used by the client for encryption.
-The payload is encrypted as<a href="#section-4.2.2-10" class="pilcrow">¶</a></p>
+and <code>0x00</code> if the aggregator is the helper. <code>enc</code> is the HPKE encapsulated key
+and <code>context</code> is the HPKE context used by the client for encryption.  The
+payload is encrypted as<a href="#section-4.2.2-10" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-11">
 <pre>
 payload = context.Seal(nonce || extensions, input_share)
@@ -2323,7 +2323,7 @@ struct {
 corresponding to <code>CollectReq.task_id</code>.<a href="#section-4.3.2-14.1" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-4.3.2-14.2">
-              <code>enc</code> is the encapsulated HPKE context, used by the collector to decrypt the
+              <code>enc</code> is the HPKE encapsulated key, used by the collector to decrypt the
 aggregate share.<a href="#section-4.3.2-14.2" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-4.3.2-14.3">
@@ -4053,9 +4053,9 @@ protocol. This registry should contain the following columns:<a href="#section-7
         <h3 id="name-urn-sub-namespace-for-ppm-u">
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-urn-sub-namespace-for-ppm-u" class="section-name selfRef">URN Sub-namespace for PPM (urn:ietf:params:ppm)</a>
         </h3>
-<p id="section-7.3-1">The following value [will be/has been] registered in the "IETF URN Sub-
-namespace for Registered Protocol Parameter Identifiers" registry, following the
-template in <span>[<a href="#RFC3553" class="xref">RFC3553</a>]</span>:<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-1">The following value [will be/has been] registered in the "IETF URN
+Sub-namespace for Registered Protocol Parameter Identifiers" registry,
+following the template in <span>[<a href="#RFC3553" class="xref">RFC3553</a>]</span>:<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-7.3-2">
 <pre>
 Registry name:  ppm
