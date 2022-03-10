@@ -859,8 +859,6 @@ struct {
    report share or receives a message from its peer.  Messages exchanged
    between aggregators are structured as follows:
 
-   [CP: To implement.]
-
    struct {
      Nonce nonce;
      TransitionType tran_type;
