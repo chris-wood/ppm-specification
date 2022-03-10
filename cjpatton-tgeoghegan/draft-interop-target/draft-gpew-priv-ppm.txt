@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 9 September 2022                                     Cloudflare
+Expires: 11 September 2022                                    Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                            8 March 2022
+                                                           10 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 9 September 2022.
+   This Internet-Draft will expire on 11 September 2022.
 
 Copyright Notice
 
@@ -502,7 +502,6 @@ struct {
   uint64 rand;
 } Nonce;
 
-[CP: To implement. Need to swap the byte for leader and helper.]
 /* The various roles in the PPM protocol. */
 enum {
   collector(0),
@@ -609,8 +608,8 @@ struct {
    [OPEN ISSUE: Decide whether to expand the width of the id, or support
    multiple cipher suites (a la OHTTP/ECH).]
 
-   [CP: To implement.]  The client MUST abort if any of the following
-   happen for any HPKE-config request:
+   The client MUST abort if any of the following happen for any HPKE-
+   config request:
 
    *  the client and aggregator failed to establish a secure,
       aggregator-authenticated channel;
@@ -620,11 +619,11 @@ struct {
    *  the key config specifies a KEM, KDF, or AEAD algorithm the client
       doesn't recognize.
 
-   [CP: To implement.]  Aggregators SHOULD use HTTP caching to permit
-   client-side caching of this resource [RFC5861].  Aggregators SHOULD
-   favor long cache lifetimes to avoid frequent cache revalidation,
-   e.g., on the order of days.  Aggregators can control this cached
-   lifetime with the Cache-Control header, as follows:
+   Aggregators SHOULD use HTTP caching to permit client-side caching of
+   this resource [RFC5861].  Aggregators SHOULD favor long cache
+   lifetimes to avoid frequent cache revalidation, e.g., on the order of
+   days.  Aggregators can control this cached lifetime with the Cache-
+   Control header, as follows:
 
      Cache-Control: max-age=86400
 
@@ -676,7 +675,7 @@ struct {
  enc, context = SetupBaseS(pk, Report.task_id ||
                                "ppm input share" || 0x01 || server_role)
 
-   [OPEN ISSUE: Is 0x01 ambiguous?
+   [OPEN ISSUE: Is 0x01 ambiguous?]
 
    where pk is the aggregator's public key and and server_role is the
    Role of the intended racipient (0x02 for the leader and 0x03 for the
@@ -700,12 +699,12 @@ struct {
    measurement value in more than one report if the leader responds with
    status 200 and an empty body.
 
-   [CP: To implement.]  The leader responds to requests with out-of-date
-   HpkeConfig.id values, indicated by HpkeCiphertext.config_id, with
-   status 400 and an error of type 'outdatedConfig'.  Clients SHOULD
-   invalidate any cached aggregator HpkeConfig and retry with a freshly
-   generated Report.  If this retried report does not succeed, clients
-   MUST abort and discontinue retrying.
+   The leader responds to requests with out-of-date HpkeConfig.id
+   values, indicated by HpkeCiphertext.config_id, with status 400 and an
+   error of type 'outdatedConfig'.  Clients SHOULD invalidate any cached
+   aggregator HpkeConfig and retry with a freshly generated Report.  If
+   this retried report does not succeed, clients MUST abort and
+   discontinue retrying.
 
    As discussed in Section 4.3.2.2, the leader ignores any report whose
    nonce contains a timestamp that falls in a batch interval for which
@@ -780,13 +779,13 @@ struct {
 
    Leader                                                 Helper
 
-   AggregateInitReq (Reports 1-10) ------------------------->  \
+   AggregateReq (Reports 1-10) ----------------------------->  \
    <--------------------------------- AggregateResp (State 1)  | Reports
    AggregateReq (continued, State 1) ----------------------->  | 1-10
    <--------------------------------- AggregateResp (State 2)  /
 
 
-   AggregateInitReq (Reports 11-20, State 1) --------------->  \
+   AggregateReq (Reports 11-20, State 1) ------------------->  \
    <--------------------------------- AggregateResp (State 1)  | Reports
    AggregateReq (continued, State 2) ----------------------->  | 11-20
    <--------------------------------- AggregateResp (State 2)  /
@@ -1164,15 +1163,15 @@ struct {
        opaque tag[32];
    } AggregateReq;
 
-   As discussed in {aggregation-flow}, the leader may choose to shard
-   the task of aggregating a large number of reports into any number of
-   sub-batches.  The process of aggregating the reports in a leader-
-   defined sub-batch is called an _aggregation job_. An AggregationJobID
-   is a globally unique sequence of bytes chosen by the leader to
-   identify an aggregation job.  It is RECOMMENDED that this be set to a
-   random string output by a cryptographically secure pseudorandom
-   number generator.  The aggregation job ID is used by aggregators to
-   look up preparation state for the reports included in the sub-batch.
+   As discussed in Section 4.3, the leader may choose to shard the task
+   of aggregating a large number of reports into any number of sub-
+   batches.  The process of aggregating the reports in a leader-defined
+   sub-batch is called an _aggregation job_. An AggregationJobID is a
+   globally unique sequence of bytes chosen by the leader to identify an
+   aggregation job.  It is RECOMMENDED that this be set to a random
+   string output by a cryptographically secure pseudorandom number
+   generator.  The aggregation job ID is used by aggregators to look up
+   preparation state for the reports included in the sub-batch.
 
    The last 32 bytes of each message is an HMAC-SHA256 tag computed over
    the serialized message excluding the tag field itself.  The key that
@@ -1424,7 +1423,7 @@ struct {
    CollectResp message:
 
    struct {
-     HpkeCiphertext encrypted_agg_shares shares<1..2^16-1>;
+     HpkeCiphertext encrypted_agg_shares<1..2^16-1>;
    } CollectResp;
 
    The encrypted_agg_shares field is the vector of encrypted aggregate
