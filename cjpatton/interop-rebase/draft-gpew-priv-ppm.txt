@@ -644,7 +644,7 @@ struct {
    struct {
      TaskID task_id;
      Nonce nonce;
-     Extension extensions<0..2^16-1>;
+     Extension extensions<4..2^16-1>;
      HpkeCiphertext encrypted_input_shares<1..2^16-1>;
    } Report;
 
