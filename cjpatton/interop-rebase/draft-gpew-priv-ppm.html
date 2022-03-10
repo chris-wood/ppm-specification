@@ -1508,7 +1508,7 @@ client's input.<a href="#section-1.2-3.34.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-1.2-4">This document uses the protocol definition language of <span>[<a href="#RFC8446" class="xref">RFC8446</a>]</span>.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
+<p id="section-1.2-4">This document uses the presentation language of <span>[<a href="#RFC8446" class="xref">RFC8446</a>]</span>.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2016,7 +2016,7 @@ the intended racipient (<code>0x02</code> for the leader and <code>0x03</code> f
 general, the info string for computing the HPKE context is suffixed by two
 bytes, the first of which identifies the role of the sender and the second of
 which identifies the role of the intended recipient.<a href="#section-4.2.2-8" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-9"><code>enc</code> is the encapsulated HPKE context and <code>context</code> is the HPKE
+<p id="section-4.2.2-9"><code>enc</code> is the HPKE encapsulated key and <code>context</code> is the HPKE
 context used by the client for encryption. The payload is encrypted as<a href="#section-4.2.2-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-10">
 <pre>
@@ -2532,14 +2532,16 @@ opaque AggregationJobID[32];
 
 enum {
   agg_init_req(0),
-  agg_req(1),
+  agg_cont_req(1),
+  agg_share_req(2),
 } AggregateReqType;
 
 struct {
     AggregateReqType msg_type;
     select (msg_type) {
-        agg_init_req: AggregateInitReq;
-        agg_req: AggregateContinueReq;
+        agg_init_req:  AggregateInitReq;
+        agg_cont_req:  AggregateContinueReq;
+        agg_share_req: AggregateShareReq;
     }
     opaque tag[32];
 } AggregateReq;
@@ -2648,8 +2650,8 @@ Transition messages corresponding to the report sequence being aggregated. The
 sequences <span class="bcp14">MUST</span> have the same order; any Transition that appears out of order
 <span class="bcp14">MUST</span> be ignored by the helper. (See below.)<a href="#section-4.3.4.2-3" class="pilcrow">¶</a></p>
 <p id="section-4.3.4.2-4">Let <code>[aggregator]</code> denote the helper's API endpoint. The leader sends a POST
-request to <code>[aggregator]/aggregate</code> with an Aggregate message of type <code>agg_req</code>
-with payload AggregateContinueReq.<a href="#section-4.3.4.2-4" class="pilcrow">¶</a></p>
+request to <code>[aggregator]/aggregate</code> with an Aggregate message of type
+<code>agg_cont_req</code> with payload AggregateContinueReq.<a href="#section-4.3.4.2-4" class="pilcrow">¶</a></p>
 <p id="section-4.3.4.2-5">After verifying the authentication tag as described in
 <a href="#aggregate-message-auth" class="xref">Section 4.3.4</a>, the helper processes the AggregateContinueReq as
 follows. It first scans <code>AggregateContinueReq.seq</code> to check for any reports that
@@ -2671,71 +2673,88 @@ whose body is the AggregateResp.<a href="#section-4.3.4.2-7" class="pilcrow">¶<
 <a href="#section-4.3.4.3" class="section-number selfRef">4.3.4.3. </a><a href="#name-aggregate-share-request" class="section-name selfRef">Aggregate Share Request</a>
             </h5>
 <p id="section-4.3.4.3-1">Once the aggregators have verified at least as many reports as required for the
-PPM task, the leader sends an AggregateShareReq message to each helper:<a href="#section-4.3.4.3-1" class="pilcrow">¶</a></p>
+PPM task, the leader sends to each helper a PSOT request to
+<code>[helper]/aggregate_share</code> with an AggregateReq message of type <code>agg_share_req</code>
+and a payload with the following message:<a href="#section-4.3.4.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.3.4.3-2">
 <pre>
 struct {
   TaskID task_id;
   Interval batch_interval;
-  opaque tag[32];
+  uint64 report_count;
+  opaque checksum[32];
 } AggregateShareReq;
 </pre><a href="#section-4.3.4.3-2" class="pilcrow">¶</a>
 </div>
-<p id="section-4.3.4.3-3">The first field is the task ID and the second is the batch interval for the
-batch being collected. <code>tag</code> is an HMAC-SHA256 tag over the serialized
-message, excluding the <code>tag</code> field itself, computed using the <code>agg_auth_key</code>
-shared by the aggregators. The helper responds to this request with an
-aggregate share encrypted under the collector's HPKE public key.<a href="#section-4.3.4.3-3" class="pilcrow">¶</a></p>
-<p id="section-4.3.4.3-4">For each aggregator endpoint <code>[aggregator]</code> in the parameters associated with
-task, except its own, the leader sends a POST request to
-<code>[aggregator]/aggregate_share</code> with an Aggregate message of type <code>agg_share_req</code>
-and a payload with the following message:<a href="#section-4.3.4.3-4" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-3">[OPEN ISSUE: consider updating the <code>checksum</code> algorithm to not permit
+collisions]<a href="#section-4.3.4.3-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.3.4.3-4.1">
+                <code>task_id</code> is the task ID associated with the PPM parameters.<a href="#section-4.3.4.3-4.1" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-4.3.4.3-4.2">
+                <code>batch_interval</code> is the batch interval of the request.<a href="#section-4.3.4.3-4.2" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-4.3.4.3-4.3">
+                <code>report_count</code> is the number of reports included in the aggregation.<a href="#section-4.3.4.3-4.3" class="pilcrow">¶</a>
+</li>
+              <li class="normal" id="section-4.3.4.3-4.4">
+                <code>checksum</code> is the checksum computed over the set of client reports. The
+checksum is computed by taking the SHA256 hash of each nonce from the client
+reports included in the aggregation, then combining the hash values with a
+bitwise-XOR operation.<a href="#section-4.3.4.3-4.4" class="pilcrow">¶</a>
+</li>
+            </ul>
 <p id="section-4.3.4.3-5">After verifying the authentication tag as described in
 <a href="#aggregate-message-auth" class="xref">Section 4.3.4</a>, the helper processes the AggregateShareReq as
 follows. It first ensures that the request meets the requirements for batch
 parameters following the procedure in <a href="#batch-parameter-validation" class="xref">Section 4.5</a>. If the
-batch parameters are invalid, then it <span class="bcp14">MUST</span> abort with error "XXX". Next, it
-computes the aggregate share for the batch interval as described in
+batch parameters are invalid, then it <span class="bcp14">MUST</span> abort with error "XXX".<a href="#section-4.3.4.3-5" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-6">Next, it computes a checksum based on its view of the output shares included in
+the batch window, and checks that the <code>report_count</code> and <code>checksum</code> included in
+the request match its computed values. If not, then it <span class="bcp14">MUST</span> abort with error
+"XXX".<a href="#section-4.3.4.3-6" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-7">Next, it computes the aggregate share for the batch interval as described in
 <a href="#out-to-agg-share" class="xref">Section 4.3.3</a>, obtaining an opaque byte string <code>agg_share</code> whose
-structure is specific to the VDAF in use. Next, the helper encrypts the
-<code>agg_share</code> as follows:<a href="#section-4.3.4.3-5" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.3.4.3-6">
+structure is specific to the VDAF in use. The helper encrypts the
+<code>agg_share</code> as follows:<a href="#section-4.3.4.3-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.3.4.3-8">
 <pre>
 enc, context = SetupBaseS(pk, AggregateShareReq.task_id ||
                               "ppm aggregate share" || 0x03 || 0x00)
 
 encrypted_agg_share = context.Seal(AggregateShareReq.batch_interval,
                                    agg_share)
-</pre><a href="#section-4.3.4.3-6" class="pilcrow">¶</a>
+</pre><a href="#section-4.3.4.3-8" class="pilcrow">¶</a>
 </div>
-<p id="section-4.3.4.3-7">where <code>pk</code> is the HPKE public key encoded by the collector's HPKE key.<a href="#section-4.3.4.3-7" class="pilcrow">¶</a></p>
-<p id="section-4.3.4.3-8">Encryption prevents the leader from learning the actual result, as it only has
-its own aggregate share and cannot compute the helper's.<a href="#section-4.3.4.3-8" class="pilcrow">¶</a></p>
-<p id="section-4.3.4.3-9">The helper responds to the leader with HTTP status 200 OK and a body consisting
-of an <code>AggregateShareResp</code>:<a href="#section-4.3.4.3-9" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.3.4.3-10">
+<p id="section-4.3.4.3-9">where <code>pk</code> is the HPKE public key encoded by the collector's HPKE key.<a href="#section-4.3.4.3-9" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-10">Encryption prevents the leader from learning the actual result, as it only has
+its own aggregate share and cannot compute the helper's.<a href="#section-4.3.4.3-10" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-11">The helper responds to the leader with HTTP status 200 OK and a body consisting
+of an <code>AggregateShareResp</code>:<a href="#section-4.3.4.3-11" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.3.4.3-12">
 <pre>
 struct {
     HpkeCiphertext encrypted_aggregate_share;
     opaque tag[32];
 } AggregateShareResp;
-</pre><a href="#section-4.3.4.3-10" class="pilcrow">¶</a>
+</pre><a href="#section-4.3.4.3-12" class="pilcrow">¶</a>
 </div>
-<p id="section-4.3.4.3-11"><code>encrypted_input_share.config_id</code> is set to the collector's HPKE config ID.
+<p id="section-4.3.4.3-13"><code>encrypted_input_share.config_id</code> is set to the collector's HPKE config ID.
 <code>encrypted_input_share.enc</code> is set to the encapsulated HPKE context <code>enc</code>
 computed above and <code>encrypted_input_share.ciphertext</code> is the ciphertext
 <code>encrypted_agg_share</code> computed above. <code>tag</code> is an HMAC-SHA256 tag over the
 serialized message, excluding the <code>tag</code> field itself, computed using the
-<code>agg_auth_key</code> shared by the aggregators.<a href="#section-4.3.4.3-11" class="pilcrow">¶</a></p>
-<p id="section-4.3.4.3-12">After verifying the authentication tag as described in
+<code>agg_auth_key</code> shared by the aggregators.<a href="#section-4.3.4.3-13" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-14">After verifying the authentication tag as described in
 <a href="#aggregate-message-auth" class="xref">Section 4.3.4</a>, the leader uses the HpkeCiphertext to respond to a
-collect request (see <a href="#collect-flow" class="xref">Section 4.4</a>).<a href="#section-4.3.4.3-12" class="pilcrow">¶</a></p>
-<p id="section-4.3.4.3-13">The leader <span class="bcp14">MAY</span> make multiple aggregate-share requests for a given batch interval
-and <span class="bcp14">MUST</span> get the same result each time.<a href="#section-4.3.4.3-13" class="pilcrow">¶</a></p>
-<p id="section-4.3.4.3-14">After issuing an aggregate-share request for a given batch interval, it is an
+collect request (see <a href="#collect-flow" class="xref">Section 4.4</a>).<a href="#section-4.3.4.3-14" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-15">The leader <span class="bcp14">MAY</span> make multiple aggregate-share requests for a given batch interval
+and <span class="bcp14">MUST</span> get the same result each time.<a href="#section-4.3.4.3-15" class="pilcrow">¶</a></p>
+<p id="section-4.3.4.3-16">After issuing an aggregate-share request for a given batch interval, it is an
 error for the leader to issue any more aggregate or aggregate-init requests for
 reports in the batch interval. These reports will be rejected by helpers as
-described in <a href="#prep-start" class="xref">Section 4.3.2.2</a>.<a href="#section-4.3.4.3-14" class="pilcrow">¶</a></p>
+described in <a href="#prep-start" class="xref">Section 4.3.2.2</a>.<a href="#section-4.3.4.3-16" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2747,73 +2766,96 @@ described in <a href="#prep-start" class="xref">Section 4.3.2.2</a>.<a href="#se
         <h3 id="name-collecting-results">
 <a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-collecting-results" class="section-name selfRef">Collecting Results</a>
         </h3>
-<p id="section-4.4-1">The collector sends a CollectReq message to the leader in order to collect
-aggregate results. This message is structured as follows:<a href="#section-4.4-1" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.4-2">
+<p id="section-4.4-1">[OPEN ISSUE: Decide if and how the collector's request is authenticated. If not,
+then we need to ensure that collect job URIs are resistant to enumeration
+attacks.]<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">The collector sends a CollectReq message to the leader in order to collect
+aggregate results. This message is structured as follows:<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.4-3">
 <pre>
 struct {
   TaskID task_id;
   Interval batch_interval;
   opaque agg_param&lt;0..2^16-1&gt;;
 } CollectReq;
-</pre><a href="#section-4.4-2" class="pilcrow">¶</a>
+</pre><a href="#section-4.4-3" class="pilcrow">¶</a>
 </div>
-<p id="section-4.4-3">The named parameters are:<a href="#section-4.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.4-4">The named parameters are:<a href="#section-4.4-4" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-4.4-4.1">
-            <code>task_id</code>, the PPM task ID.<a href="#section-4.4-4.1" class="pilcrow">¶</a>
+<li class="normal" id="section-4.4-5.1">
+            <code>task_id</code>, the PPM task ID.<a href="#section-4.4-5.1" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-4.4-4.2">
-            <code>batch_interval</code>, the request's batch interval.<a href="#section-4.4-4.2" class="pilcrow">¶</a>
+          <li class="normal" id="section-4.4-5.2">
+            <code>batch_interval</code>, the request's batch interval.<a href="#section-4.4-5.2" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-4.4-4.3">
-            <code>agg_param</code>, an aggregation parameter for the VDAF being executed.<a href="#section-4.4-4.3" class="pilcrow">¶</a>
+          <li class="normal" id="section-4.4-5.3">
+            <code>agg_param</code>, an aggregation parameter for the VDAF being executed.<a href="#section-4.4-5.3" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-4.4-5">To make a collect request, the collector issues a POST request to
+<p id="section-4.4-6">To make a collect request, the collector issues a POST request to
 <code>[leader]/collect</code>, where <code>[leader]</code> is the leader's endpoint URL with a
-CollectReq message as the body.<a href="#section-4.4-5" class="pilcrow">¶</a></p>
-<p id="section-4.4-6">Depending on the VDAF scheme and how the leader is configured, the collect
-request may cause the leader to send a series of aggregate requests to the
-helpers in order to compute their aggregate shares. Alternately, the leader may
-already have made these requests and can respond immediately. In either case it
-responds to the collector's request as follows.<a href="#section-4.4-6" class="pilcrow">¶</a></p>
-<p id="section-4.4-7">It begins by checking that the request meets the requirements of the batch
-parameters using the procedure in <a href="#batch-parameter-validation" class="xref">Section 4.5</a>. Next, it
-obtains each helper's encrypted aggregate share for the batch interval by sending
-it an AggregateShareReq message as described in <a href="#aggregate-share-request" class="xref">Section 4.3.4.3</a>.
-(These requests may too have been made in advance.) If any one of these requests
-fail, then the leader aborts with "XXX". [TODO: Maybe convey the reason for
-aborting.]<a href="#section-4.4-7" class="pilcrow">¶</a></p>
-<p id="section-4.4-8">Next, the leader retrieves its own aggregate share <code>agg_share</code> for the batch
+CollectReq message as the body.<a href="#section-4.4-6" class="pilcrow">¶</a></p>
+<p id="section-4.4-7">Depending on the VDAF scheme and how the leader is configured, the leader and
+helper may already have prepared all the reports falling within <code>batch_interval</code>
+and be ready to return the aggregate shares right away, but this cannot be
+guaranteed. In fact, for some VDAFs, it is not be possible to begin preparing
+inputs until the collector provides the aggregation parameter in the
+<code>CollectReq</code>. For these reasons, collect requests are handled asynchronously.<a href="#section-4.4-7" class="pilcrow">¶</a></p>
+<p id="section-4.4-8">Upon receipt of a <code>CollectReq</code>, the leader begins by checking that the request
+meets the requirements of the batch parameters using the procedure in
+<a href="#batch-parameter-validation" class="xref">Section 4.5</a>. If not, it <span class="bcp14">MUST</span> abort with error "XXX".<a href="#section-4.4-8" class="pilcrow">¶</a></p>
+<p id="section-4.4-9">Next, the leader sends the collector a response with HTTP status 303 See Other
+and a Location header containing a URI identifying the collect job that can be
+polled by the collector, called the "collect job URI".<a href="#section-4.4-9" class="pilcrow">¶</a></p>
+<p id="section-4.4-10">The leader then begins working with the helper to prepare the shares falling
+into <code>CollectReq.batch_interval</code> (or continues this process, depending on the
+VDAF) as described in <a href="#aggregation-flow" class="xref">Section 4.3</a>.<a href="#section-4.4-10" class="pilcrow">¶</a></p>
+<p id="section-4.4-11">After receiving the response to its CollectReq, the collector makes an HTTP GET
+request to the collect job URI to check on the status of the collect job and
+eventually obtain the result. If the collect job is not finished yet, the leader
+responds with HTTP status 202 Accepted. The response <span class="bcp14">MAY</span> include a Retry-After
+header field to suggest a pulling interval to the collector.<a href="#section-4.4-11" class="pilcrow">¶</a></p>
+<p id="section-4.4-12">Once all the necessary reports have been prepared, the leader obtains the
+helper's encrypted aggregate share for the batch interval by sending an
+<code>AggregateShareReq</code> to the helper as described in <a href="#aggregate-share-request" class="xref">Section 4.3.4.3</a>.
+The leader then computes its own aggregate share by aggregating all of the
+prepared output shares that fall within the batch interval.<a href="#section-4.4-12" class="pilcrow">¶</a></p>
+<p id="section-4.4-13">Next, the leader retrieves its own aggregate share <code>agg_share</code> for the batch
 interval as described in <a href="#out-to-agg-share" class="xref">Section 4.3.3</a>. Finally, it encrypts it under the
-collector's HPKE public key as follows:<a href="#section-4.4-8" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.4-9">
+collector's HPKE public key as follows:<a href="#section-4.4-13" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.4-14">
 <pre>
 enc, context = SetupBaseS(pk, CollectReq.task_id ||
                               "ppm aggregate share" || 0x02 || 0x00)
 
 encrypted_agg_share = context.Seal(CollectReq.batch_interval,
                                    agg_share)
-</pre><a href="#section-4.4-9" class="pilcrow">¶</a>
+</pre><a href="#section-4.4-14" class="pilcrow">¶</a>
 </div>
-<p id="section-4.4-10">where <code>pk</code> is the collector's public key.<a href="#section-4.4-10" class="pilcrow">¶</a></p>
-<p id="section-4.4-11">[OPEN ISSUE: What happens if this all takes a really long time.]<a href="#section-4.4-11" class="pilcrow">¶</a></p>
-<p id="section-4.4-12">[TODO: Decide if and how the collector's request is authenticated.]<a href="#section-4.4-12" class="pilcrow">¶</a></p>
-<p id="section-4.4-13">The leader responds to the collector with an HTTP 200 OK and a CollectResp
-message:<a href="#section-4.4-13" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.4-14">
+<p id="section-4.4-15">where <code>pk</code> is the collector's public key.<a href="#section-4.4-15" class="pilcrow">¶</a></p>
+<p id="section-4.4-16">When both aggregators' shares are successfully obtained, the leader responds to
+subsequent HTTP GET requests to the collect job's URI with HTTP status 200 OK
+and a body consisting of a <code>CollectResult</code>:<a href="#section-4.4-16" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.4-17">
 <pre>
 struct {
   HpkeCiphertext encrypted_agg_shares&lt;1..2^16-1&gt;;
-} CollectResp;
-</pre><a href="#section-4.4-14" class="pilcrow">¶</a>
+} CollectResult;
+</pre><a href="#section-4.4-17" class="pilcrow">¶</a>
 </div>
-<p id="section-4.4-15">The <code>encrypted_agg_shares</code> field is the vector of encrypted aggregate shares.
+<p id="section-4.4-18">The <code>encrypted_agg_shares</code> field is the vector of encrypted aggregate shares.
 They <span class="bcp14">MUST</span> appear in the same order as the aggregator endpoints list of the task
-parameters.<a href="#section-4.4-15" class="pilcrow">¶</a></p>
-<p id="section-4.4-16">[OPEN ISSUE: What should the collector do if it can't compute the aggregate
-result?]<a href="#section-4.4-16" class="pilcrow">¶</a></p>
+parameters.<a href="#section-4.4-18" class="pilcrow">¶</a></p>
+<p id="section-4.4-19">If obtaining aggregate shares fails, then the leader responds to subsequent HTTP
+GET requests to the collect job URI with an HTTP error status and a problem
+document as described in <a href="#errors" class="xref">Section 3.1</a>.<a href="#section-4.4-19" class="pilcrow">¶</a></p>
+<p id="section-4.4-20">The leader <span class="bcp14">MUST</span> retain a collect job's results until the collector sends an HTTP
+DELETE request to the collect job URI, in which case the leader responds with
+HTTP status 204 No Content.<a href="#section-4.4-20" class="pilcrow">¶</a></p>
+<p id="section-4.4-21">[OPEN ISSUE: Allow the leader to drop aggregate shares after some reasonable
+amount of time has passed, but it's not clear how to specify that. ACME doesn't
+bother to say anything at all about this when describing how subscribers should
+fetch certificates: https://datatracker.ietf.org/doc/html/rfc8555#section-7.4.2]<a href="#section-4.4-21" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="batch-parameter-validation">
@@ -3571,7 +3613,7 @@ corresponding media types types:<a href="#section-7.1-1" class="pilcrow">¶</a><
 </li>
           <li class="normal" id="section-7.1-2.8">CollectReq <a href="#collect-flow" class="xref">Section 4.4</a>: "message/ppm-collect-req"<a href="#section-7.1-2.8" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-7.1-2.9">CollectResp <a href="#collect-flow" class="xref">Section 4.4</a>: "message/ppm-collect-req"<a href="#section-7.1-2.9" class="pilcrow">¶</a>
+          <li class="normal" id="section-7.1-2.9">CollectResult <a href="#collect-flow" class="xref">Section 4.4</a>: "message/ppm-collect-result"<a href="#section-7.1-2.9" class="pilcrow">¶</a>
 </li>
         </ul>
 <p id="section-7.1-3">The definition for each media type is in the following subsections.<a href="#section-7.1-3" class="pilcrow">¶</a></p>
@@ -4446,9 +4488,9 @@ protocol. This registry should contain the following columns:<a href="#section-7
         <h3 id="name-urn-sub-namespace-for-ppm-u">
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-urn-sub-namespace-for-ppm-u" class="section-name selfRef">URN Sub-namespace for PPM (urn:ietf:params:ppm)</a>
         </h3>
-<p id="section-7.3-1">The following value [will be/has been] registered in the "IETF URN Sub-
-namespace for Registered Protocol Parameter Identifiers" registry, following the
-template in <span>[<a href="#RFC3553" class="xref">RFC3553</a>]</span>:<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-1">The following value [will be/has been] registered in the "IETF URN
+Sub-namespace for Registered Protocol Parameter Identifiers" registry,
+following the template in <span>[<a href="#RFC3553" class="xref">RFC3553</a>]</span>:<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-7.3-2">
 <pre>
 Registry name:  ppm
