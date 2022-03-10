@@ -1925,7 +1925,7 @@ structured as follows:<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
 struct {
   TaskID task_id;
   Nonce nonce;
-  Extension extensions&lt;4..2^16-1&gt;;
+  Extension extensions&lt;0..2^16-1&gt;;
   EncryptedInputShare encrypted_input_shares&lt;1..2^16-1&gt;;
 } Report;
 </pre><a href="#section-4.2.2-2" class="pilcrow">¶</a>
@@ -2135,7 +2135,7 @@ follows:<a href="#section-4.3.1-4" class="pilcrow">¶</a></p>
 <pre>
 struct {
   Nonce nonce;                     // Equal to Report.nonce.
-  Extension extensions&lt;4..2^16-1&gt;; // Equal to Report.extensions.
+  Extension extensions&lt;0..2^16-1&gt;; // Equal to Report.extensions.
   EncryptedInputShare helper_share;
   opaque message&lt;0..2^16-1&gt;; // VDAF message
 } AggregateSubReq;
