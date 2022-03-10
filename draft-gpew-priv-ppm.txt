@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 8 September 2022                                     Cloudflare
+Expires: 11 September 2022                                    Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                            7 March 2022
+                                                           10 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 September 2022.
+   This Internet-Draft will expire on 11 September 2022.
 
 Copyright Notice
 
@@ -1018,11 +1018,11 @@ AggregateShareReq (State 4) -------------------------------->
 
    When both aggregators' shares are successfully obtained, the leader
    responds to subsequent HTTP GET requests to the collect job's URI
-   with HTTP status 200 OK and a body consisting of a CollectResult:
+   with HTTP status 200 OK and a body consisting of a CollectResp:
 
    struct {
      EncryptedAggregateShare shares<1..2^16-1>;
-   } CollectResult;
+   } CollectResp;
 
    *  shares is a vector of EncryptedAggregateShares, as described in
       Section 4.3.2, except that for the leader's share, the task_id and
@@ -1631,7 +1631,7 @@ AggregateShareReq (State 4) -------------------------------->
 
    *  CollectReq Section 4.4: "message/ppm-collect-req"
 
-   *  CollectResult Section 4.4: "message/ppm-collect-result"
+   *  CollectResp Section 4.4: "message/ppm-collect-resp"
 
    The definition for each media type is in the following subsections.
 
