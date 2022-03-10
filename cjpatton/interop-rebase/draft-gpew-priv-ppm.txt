@@ -1296,7 +1296,7 @@ struct {
 4.3.4.3.  Aggregate Share Request
 
    Once the aggregators have verified at least as many reports as
-   required for the PPM task, the leader sends to each helper a PSOT
+   required for the PPM task, the leader sends to each helper a POST
    request to [helper]/aggregate_share with an AggregateReq message of
    type agg_share_req and a payload with the following message:
 
