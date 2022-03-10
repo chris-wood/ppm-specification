@@ -644,7 +644,7 @@ struct {
    struct {
      TaskID task_id;
      Nonce nonce;
-     Extension extensions<4..2^16-1>;
+     Extension extensions<0..2^16-1>;
      HpkeCiphertext encrypted_input_shares<1..2^16-1>;
    } Report;
 
@@ -678,7 +678,7 @@ struct {
    [OPEN ISSUE: Is 0x01 ambiguous?]
 
    where pk is the aggregator's public key and and server_role is the
-   Role of the intended racipient (0x02 for the leader and 0x03 for the
+   Role of the intended recipient (0x02 for the leader and 0x03 for the
    helper).  In general, the info string for computing the HPKE context
    is suffixed by two bytes, the first of which identifies the role of
    the sender and the second of which identifies the role of the
@@ -811,7 +811,7 @@ struct {
 
    struct {
      Nonce nonce;
-     Extension extensions<4..2^16-1>;
+     Extension extensions<0..2^16-1>;
      HpkeCiphertext encrypted_input_share;
    } ReportShare;
 
@@ -1150,7 +1150,6 @@ struct {
    enum {
      agg_init_req(0),
      agg_cont_req(1),
-     agg_share_req(2),
    } AggregateReqType;
 
    struct {
@@ -1158,7 +1157,6 @@ struct {
        select (msg_type) {
            agg_init_req:  AggregateInitReq;
            agg_cont_req:  AggregateContinueReq;
-           agg_share_req: AggregateShareReq;
        }
        opaque tag[32];
    } AggregateReq;
@@ -1297,14 +1295,14 @@ struct {
 
    Once the aggregators have verified at least as many reports as
    required for the PPM task, the leader sends to each helper a POST
-   request to [helper]/aggregate_share with an AggregateReq message of
-   type agg_share_req and a payload with the following message:
+   request to [helper]/aggregate_share with the following message:
 
    struct {
      TaskID task_id;
      Interval batch_interval;
      uint64 report_count;
      opaque checksum[32];
+     opaque tag[32];
    } AggregateShareReq;
 
    [OPEN ISSUE: consider updating the checksum algorithm to not permit
@@ -1321,11 +1319,16 @@ struct {
       from the client reports included in the aggregation, then
       combining the hash values with a bitwise-XOR operation.
 
-   After verifying the authentication tag as described in Section 4.3.4,
-   the helper processes the AggregateShareReq as follows.  It first
-   ensures that the request meets the requirements for batch parameters
-   following the procedure in Section 4.5.  If the batch parameters are
-   invalid, then it MUST abort with error "XXX".
+   *  tag is the the HMAC-SHA256 tag computed over the serialized
+      message excluding the tag field itself.  The key that is used is
+      the agg_auth_key shared by the aggregators and configured for the
+      given task.
+
+   After verifying the authentication tag, the helper processes the
+   AggregateShareReq as follows.  It first ensures that the request
+   meets the requirements for batch parameters following the procedure
+   in Section 4.5.  If the batch parameters are invalid, then it MUST
+   abort with error "XXX".
 
    Next, it computes a checksum based on its view of the output shares
    included in the batch window, and checks that the report_count and
@@ -1451,11 +1454,11 @@ struct {
 
    When both aggregators' shares are successfully obtained, the leader
    responds to subsequent HTTP GET requests to the collect job's URI
-   with HTTP status 200 OK and a body consisting of a CollectResult:
+   with HTTP status 200 OK and a body consisting of a CollectResp:
 
    struct {
      HpkeCiphertext encrypted_agg_shares<1..2^16-1>;
-   } CollectResult;
+   } CollectResp;
 
    The encrypted_agg_shares field is the vector of encrypted aggregate
    shares.  They MUST appear in the same order as the aggregator
@@ -2066,7 +2069,7 @@ struct {
 
    *  CollectReq Section 4.4: "message/ppm-collect-req"
 
-   *  CollectResult Section 4.4: "message/ppm-collect-result"
+   *  CollectResp Section 4.4: "message/ppm-collect-resp"
 
    The definition for each media type is in the following subsections.
 
