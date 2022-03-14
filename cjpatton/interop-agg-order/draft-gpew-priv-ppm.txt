@@ -937,7 +937,7 @@ struct {
    been aggregated but not yet collected) requires each aggregator to
    store the nonces of reports that have been aggregated in uncollected
    batch intervals.  So that the aggregator does not have to maintain
-   this storage indefinitely, it MAY insetead fail with report-dropped
+   this storage indefinitely, it MAY instead fail with report-dropped
    under the conditions prescribed in Section 4.7.
 
    Next, the aggregator attempts to decrypt its input share.  It starts
@@ -1068,7 +1068,7 @@ struct {
    preparation phase, then out is the leader's output share, in which
    case the leader finishes.  Otherwise, it interpresets out as the
    tuple (new_state, outbound), where new_state is its new preparation
-   state and outobund is its next VDAF messaage, and continues wiht
+   state and outbound is its next VDAF messaage, and continues with
    outbound as its next VDAF message.  Either way, it moves to state
    WAITING.
 

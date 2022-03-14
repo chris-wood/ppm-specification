@@ -2311,7 +2311,7 @@ than once in a batch.<a href="#section-4.4.2.2-3.2" class="pilcrow">¶</a>
 <p id="section-4.4.2.2-4">Note that detecting whether a report has been replayed (i.e., it has been
 aggregated but not yet collected) requires each aggregator to store the nonces
 of reports that have been aggregated in uncollected batch intervals. So that the
-aggregator does not have to maintain this storage indefinitely, it <span class="bcp14">MAY</span> insetead
+aggregator does not have to maintain this storage indefinitely, it <span class="bcp14">MAY</span> instead
 fail with <code>report-dropped</code> under the conditions prescribed in <a href="#anti-replay" class="xref">Section 4.7</a>.<a href="#section-4.4.2.2-4" class="pilcrow">¶</a></p>
 <p id="section-4.4.2.2-5">Next, the aggregator attempts to decrypt its input share. It starts by looking
 up the HPKE config and corresponding secret key indicated by
@@ -2448,8 +2448,8 @@ without sending a message to the helper. Otherwise it interprets <code>out</code
 follows. If this is the last round of VDAF preparation phase, then <code>out</code> is the
 leader's output share, in which case the leader finishes. Otherwise, it
 interpresets <code>out</code> as the tuple <code>(new_state, outbound)</code>, where <code>new_state</code> is
-its new preparation state and <code>outobund</code> is its next VDAF messaage, and
-continues wiht <code>outbound</code> as its next VDAF message. Either way, it moves to
+its new preparation state and <code>outbound</code> is its next VDAF messaage, and
+continues with <code>outbound</code> as its next VDAF message. Either way, it moves to
 state WAITING.<a href="#section-4.4.2.3-12" class="pilcrow">¶</a></p>
 </section>
 </div>
