@@ -519,9 +519,9 @@ struct {
 
 4.1.  Aborting the Protocol
 
-   This section uses the verb "abort with error ERROR", where "ERROR" is
-   an error type enumerated in Table 1, to prescribe the behavior of a
-   protocol participant when it encounters a fatal error:
+   This documented uses the verb "abort with error ERROR", where "ERROR"
+   is an error type enumerated in Table 1, to prescribe the behavior of
+   a protocol participant when it encounters a fatal error:
 
    *  If a fatal error is encountered while processing an HTTP request,
       the HTTP server responds with an HTTP error status as described in
@@ -529,7 +529,7 @@ struct {
 
    *  If a fatal error is encountered while processing an HTTP request,
       the HTTP client... [TODO: Figure out what behavior is called for
-      here.  An HTTP reqwuest hsould be sent that conveys the error.]
+      here.  An HTTP request should be sent that conveys the error.]
 
 4.2.  Task Configuration
 
