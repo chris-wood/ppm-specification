@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 12 September 2022                                    Cloudflare
+Expires: 16 September 2022                                    Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                           11 March 2022
+                                                           15 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 12 September 2022.
+   This Internet-Draft will expire on 16 September 2022.
 
 Copyright Notice
 
@@ -81,20 +81,21 @@ Table of Contents
    3.  Message Transport
      3.1.  Errors
    4.  Protocol Definition
-     4.1.  Task Configuration
-     4.2.  Uploading Reports
-       4.2.1.  HPKE Configuration Request
-       4.2.2.  Upload Request
-       4.2.3.  Upload Extensions
-       4.2.4.  Report Storage
-     4.3.  Verifying and Aggregating Reports
-       4.3.1.  Report Shares
-       4.3.2.  Preparing a Report Share for Aggregation
-       4.3.3.  Aggregating Output Shares
-       4.3.4.  Aggregate Messages
-     4.4.  Collecting Results
-     4.5.  Validating Batch Parameters
-     4.6.  Anti-replay
+     4.1.  Aborting the Protocol
+     4.2.  Task Configuration
+     4.3.  Uploading Reports
+       4.3.1.  HPKE Configuration Request
+       4.3.2.  Upload Request
+       4.3.3.  Upload Extensions
+       4.3.4.  Report Storage
+     4.4.  Verifying and Aggregating Reports
+       4.4.1.  Report Shares
+       4.4.2.  Preparing a Report Share for Aggregation
+       4.4.3.  Aggregating Output Shares
+       4.4.4.  Aggregate Messages
+     4.5.  Collecting Results
+     4.6.  Validating Batch Parameters
+     4.7.  Anti-replay
    5.  Operational Considerations
      5.1.  Protocol participant capabilities
        5.1.1.  Client capabilities
@@ -446,7 +447,7 @@ Table of Contents
      |                     | valid.                                  |
      +---------------------+-----------------------------------------+
 
-                                  Table 1
+                           Table 1: Error types.
 
    This list is not exhaustive.  The server MAY return errors set to a
    URI other than those defined above.  Servers MUST NOT use the PPM URN
@@ -455,17 +456,13 @@ Table of Contents
    errors.  The "instance" value MUST be the endpoint to which the
    request was targeted.  The problem document MUST also include a
    "taskid" member which contains the associated PPM task ID (this value
-   is always known, see Section 4.1).
+   is always known, see Section 4.2).
 
    In the remainder of this document, we use the tokens in the table
    above to refer to error types, rather than the full URNs.  For
    example, an "error of type 'unrecognizedMessage'" refers to an error
    document with "type" value
    "urn:ietf:params:ppm:error:unrecognizedMessage".
-
-   This document uses the verbs "abort" and "alert with [some error
-   message]" to describe how protocol participants react to various
-   error conditions.
 
 4.  Protocol Definition
 
@@ -520,7 +517,21 @@ struct {
   opaque payload<1..2^16-1>; // ciphertext
 } HpkeCiphertext;
 
-4.1.  Task Configuration
+4.1.  Aborting the Protocol
+
+   This documented uses the verb "abort with error ERROR", where "ERROR"
+   is an error type enumerated in Table 1, to prescribe the behavior of
+   a protocol participant when it encounters a fatal error:
+
+   *  If a fatal error is encountered while processing an HTTP request,
+      the HTTP server responds with an HTTP error status as described in
+      Section 3.1.
+
+   *  If a fatal error is encountered while processing an HTTP response,
+      the HTTP client... [TODO: Figure out what behavior is called for
+      here.  An HTTP request should be sent that conveys the error.]
+
+4.2.  Task Configuration
 
    Prior to the start of execution of the protocol, each participant
    must agree on the configuration for each task.  A task is uniquely
@@ -538,7 +549,7 @@ struct {
       aggregator's API endpoints can be found.  Each endpoint's list
       MUST be in the same order.  The leader's endpoint MUST be the
       first in the list.  The order of the encrypted_input_shares in a
-      Report (see Section 4.2) MUST be the same as the order in which
+      Report (see Section 4.3) MUST be the same as the order in which
       aggregators appear in this list.
 
    *  max_batch_lifetime: The maximum number of times a batch of reports
@@ -550,7 +561,7 @@ struct {
    *  min_batch_duration: The minimum time difference between the oldest
       and newest report in a batch.  This defines the boundaries with
       which the batch interval of each collect request must be aligned.
-      (See Section 4.5.)
+      (See Section 4.6.)
 
    *  A unique identifier for the VDAF being used for the task.
 
@@ -559,7 +570,7 @@ struct {
    parameters:
 
    *  collector_hpke_config: The HPKE [I-D.irtf-cfrg-hpke] configuration
-      of the collector (described in Section 4.2.1).  Having
+      of the collector (described in Section 4.3.1).  Having
       participants agree on this absolves collectors of the burden of
       operating an HTTP server.  See #102
       (https://github.com/abetterinternet/prio-documents/issues/102) for
@@ -578,12 +589,12 @@ struct {
    Finally, the collector is configured with the HPKE secret key
    corresponding to collector_hpke_config.
 
-4.2.  Uploading Reports
+4.3.  Uploading Reports
 
    Clients periodically upload reports to the leader, which then
    distributes the individual shares to each helper.
 
-4.2.1.  HPKE Configuration Request
+4.3.1.  HPKE Configuration Request
 
    Before the client can upload its report to the leader, it must know
    the public key of each of the aggregators.  These are retrieved from
@@ -635,7 +646,7 @@ struct {
    at least twice the cache lifetime in order to avoid rejecting
    reports.
 
-4.2.2.  Upload Request
+4.3.2.  Upload Request
 
    Clients upload reports by using an HTTP POST to [leader]/upload,
    where [leader] is the first entry in the task's aggregator endpoints.
@@ -656,10 +667,10 @@ struct {
 
    *  nonce is the report nonce generated by the client.  This field is
       used by the aggregators to ensure the report appears in at most
-      one batch.  (See Section 4.6.)
+      one batch.  (See Section 4.7.)
 
    *  extensions is a list of extensions to be included in the Upload
-      flow; see Section 4.2.3.
+      flow; see Section 4.3.3.
 
    *  encrypted_input_shares contains the encrypted input shares of each
       of the aggregators.  The order in which the encrypted input shares
@@ -706,14 +717,14 @@ struct {
    this retried report does not succeed, clients MUST abort and
    discontinue retrying.
 
-   As discussed in Section 4.3.2.2, the leader ignores any report whose
+   As discussed in Section 4.4.2.2, the leader ignores any report whose
    nonce contains a timestamp that falls in a batch interval for which
    it has received a collect request from the collector.  (Collect
-   requests are defined in Section 4.4.)  In addition, the leader SHOULD
+   requests are defined in Section 4.5.)  In addition, the leader SHOULD
    abort the upload protocol and alert the client with error
    "staleReport".
 
-4.2.3.  Upload Extensions
+4.3.3.  Upload Extensions
 
    Each Report carries a list of extensions that clients may use to
    convey additional, authenticated information in the report.  [OPEN
@@ -736,14 +747,14 @@ struct {
    "extension_type" indicates the type of extension, and
    "extension_data" contains information specific to the extension.
 
-4.2.4.  Report Storage
+4.3.4.  Report Storage
 
    The leader is required to buffer reports while waiting to aggregate
    them.  The leader SHOULD NOT accept reports whose timestamps are too
    far in the future.  Implementors MAY provide for some small leeway,
    usually no more than a few minutes, to account for clock skew.
 
-4.3.  Verifying and Aggregating Reports
+4.4.  Verifying and Aggregating Reports
 
    Once a set of clients have uploaded their reports to the leader, the
    leader can send them to the helpers to be verified and aggregated.
@@ -761,7 +772,7 @@ struct {
       reports proactively before all the reports in a batch are
       received.  Others (e.g., poplar1) require all the reports to be
       present and must be initiated by the collector.  (See
-      Section 4.4.)
+      Section 4.5.)
 
    *  Processing a set of reports -- especially validating them -- may
       require multiple round trips.
@@ -775,7 +786,7 @@ struct {
    batches of 10.  Each sub-batch takes two round-trips to process.
    Once both sub-batches have been processed, the leader can issue an
    AggregateShareReq in order to retrieve the helper's aggregate share.
-   (see Section 4.3.4.3.)
+   (see Section 4.4.4.3.)
 
    Leader                                                 Helper
 
@@ -802,7 +813,7 @@ struct {
    aggregate-share request in which the leader instructs a helper to
    "commit" to the set of output shares it recovered.]
 
-4.3.1.  Report Shares
+4.4.1.  Report Shares
 
    A report Report is comprised of the task ID, the nonce generated by
    the client, the optional report extensions, and the sequence of
@@ -821,7 +832,7 @@ struct {
    equal to the index of the aggregator in the task's
    aggregator_endpoints.
 
-4.3.2.  Preparing a Report Share for Aggregation
+4.4.2.  Preparing a Report Share for Aggregation
 
    [CP: Todo: We permit VDAFs with 0 rounds of interaction, in
    particular those that don't provide verifiabilty.  We'll have to do
@@ -833,16 +844,16 @@ struct {
    This involves executing the "preparation phase" described in
    [I-D.draft-cfrg-patton-vdaf].  If successful, each aggregator
    recovers and verifies the validity of its output share.  Output
-   shares are then aggregated as described in Section 4.3.3.
+   shares are then aggregated as described in Section 4.4.3.
 
-4.3.2.1.  Transitions
+4.4.2.1.  Transitions
 
-   Section 4.3.2.3 and Section 4.3.2.4 specify the state machines of the
+   Section 4.4.2.3 and Section 4.4.2.4 specify the state machines of the
    leader and helper respectively while aggregating a single report.
    Both state machines consist of the same five states:
 
    *  START: The aggregator is waiting to decrypt its input share and
-      compute its initial VDAF preparation state (see Section 4.3.2.2)
+      compute its initial VDAF preparation state (see Section 4.4.2.2)
 
    *  WAITING: The aggregator is waiting for a message from its peer
       before proceeding
@@ -893,13 +904,13 @@ struct {
    } TransitionError;
 
    When an aggregator computes a Transition of type continued with
-   payload payload, we say the aggregator "continues with VDAF message
-   payload"; when an aggregator computes a Transition of type finished,
-   we say the aggregator "finishes"; and when an aggregator computes a
-   Transition of type failed with failure type error, we say the
-   aggregator "fails with error error".
+   payload [payload], we say the aggregator "continues with VDAF message
+   [payload]"; when an aggregator computes a Transition of type
+   finished, we say the aggregator "finishes"; and when an aggregator
+   computes a Transition of type failed with failure type [error], we
+   say the aggregator "fails with error [error]".
 
-4.3.2.2.  Initializing the Preparation State
+4.4.2.2.  Initializing the Preparation State
 
    This section describes how each aggregator preprocesses its
    ReportShare into its first Transition.
@@ -907,33 +918,33 @@ struct {
    First, the aggregator checks if the report pertains to a batch that
    has already been collected.  This is the case if the aggregator is
    the leader and has completed a collect request for a batch containing
-   the report (see Section 4.4), or if the aggregator is a helper and
+   the report (see Section 4.5), or if the aggregator is a helper and
    has completed an aggregate-share request for a batch containing the
-   report (see Section 4.3.4.3).  It also checks if the report has been
-   observed.  This is the case if the report was used in a previous
-   aggregate request (see Section 4.3.4.1 and Section 4.3.4.2).
+   report (see Section 4.4.4.3).  It also checks if the report has been
+   aggregated.  This is the case if the report was used in a previous
+   aggregate request (see Section 4.4.4.1 and Section 4.4.4.2).
 
-   *  If the report has not yet been observed but is contained by a
-      batch that has been collected, then the aggregator fails with
+   *  If the report has never been aggregated but is contained by a
+      batch that has been collected, then the aggregator MUST fail with
       error batch-collected.  This prevents additional reports from
       being aggregated after its batch has already been collected.
 
-   *  If the report has been observed but has not been collected, then
-      it fails with error report-replayed.  This prevents a report from
-      being used more than once in a batch.
+   *  If the report has been aggregated but has not been collected, then
+      it MUST fail with error report-replayed.  This prevents a report
+      from being used more than once in a batch.
 
    Note that detecting whether a report has been replayed (i.e., it has
    been aggregated but not yet collected) requires each aggregator to
-   store the set of nonces of reports that have been aggregated in
-   uncollected batch intervals.  So that the aggregator does not have to
-   maintain this storage indefinitely, it MAY fail with report-dropped
-   under the conditions prescribed in Section 4.6.
+   store the nonces of reports that have been aggregated in uncollected
+   batch intervals.  So that the aggregator does not have to maintain
+   this storage indefinitely, it MAY instead fail with report-dropped
+   under the conditions prescribed in Section 4.7.
 
    Next, the aggregator attempts to decrypt its input share.  It starts
    by looking up the HPKE config and corresponding secret key indicated
-   by encrypted_input_share.config_id.  If not found, then it fails with
-   error hpke-unknown-config-id.  Otherwise, it decrypts the payload
-   with the following procedure:
+   by encrypted_input_share.config_id.  If not found, then it MUST fail
+   with error hpke-unknown-config-id.  Otherwise, it decrypts the
+   payload with the following procedure:
 
  context = SetupBaseR(encrypted_input_share.enc, sk,
                     task_id || "ppm input share" || 0x01 || server_role)
@@ -943,31 +954,28 @@ struct {
 
    where sk is the HPKE secret key, task_id is the task ID, and nonce
    and extensions are the nonce and extensions of the report share
-   respectively.  If decryption fails, then the aggregator fails with
-   error hpke-decrypt-error.  Variable server_role is the Role of the
-   intended recipient.
+   respectively.  Variable server_role is the Role of the intended
+   recipient.  If decryption fails, then the aggregator MUST fail with
+   error hpke-decrypt-error.
 
    Next, the aggregator runs the preparation-state initialization
    algorithm for the VDAF associated with the task and computes the
    first state transition.  Let agg_param denote the aggregation
    parameter, and let input_share denote the input share:
 
-   prep_state = PrepState(vdaf_verify_param,
-                          agg_param, nonce, input_share)
-   out = prep_state.next(None)
+   state = prep_init(vdaf_verify_param, agg_param, nonce, input_share)
+   out = prep_next(state, None)
 
-   [CP: Note that this syntax is based on
-   https://github.com/cjpatton/vdaf/pull/14.]
+   If either step fails, then the aggregator MUST fail with error vdaf-
+   prep-error.  Otherwise, out is interpreted as follows.  If the VDAF
+   is 0-round, then out is the aggregator's output share, in which case
+   the aggregator finishes and stores its output share for further
+   processing as described in Section 4.4.3.  Otherwise, if the VDAF
+   consists of one round or more, then the aggregator interprets out as
+   the pair (new_state, outbound), where new_state is its updated state
+   and outbound is its next VDAF message.
 
-   If either step fails, then the aggregator fails with error vdaf-prep-
-   error.  Otherwise, out is interpreted as follows.  If the VDAF is
-   0-round, then out is the aggregator's output share, in which case the
-   aggregator finishes and stores its output share for further
-   processing as described in Section 4.3.3.  Otherwise, if the VDAF
-   consists of one round or more, then the aggregator continues and out
-   is the aggregator's next VDAF message.
-
-4.3.2.3.  Leader
+4.4.2.3.  Leader
 
    [NOTE: This section assumes there is one one helper.  It'll have to
    be extended to allow for multiple helpers.]
@@ -1012,7 +1020,7 @@ struct {
                                 aggregation.
 
    The leader begins by initializing its preparation state for its
-   ReportShare as described in Section 4.3.2.2.  (This action is denoted
+   ReportShare as described in Section 4.4.2.2.  (This action is denoted
    by "prep_start" Figure 3.)  If it fails during this step, then it
    moves to state FAILED without sending a message to the helper.  At
    this point the report will not be processed any further.  Otherwise,
@@ -1029,42 +1037,41 @@ struct {
    *  If the leader continued but the helper finished, or if the leader
       finished but the helper continued, then move to state INVALID.
       The report will not be processed any further and the leader
-      proceeds as described in Section 4.3.4.1.
+      proceeds as described in Section 4.4.4.1.
 
    *  If the leader and helper finished, then move to FINISHED.  At this
       point the report has been completely processed and both
       aggregators have recovered an output share.  The leader proceeds
-      as described in Section 4.3.3.
+      as described in Section 4.4.3.
 
    *  If the leader and helper continued, then the leader computes its
       next state transition ("prep_next") and sends the helper a
-      Transition message with the VDAF payload computed as described
-      below.
-
-   [CP: What if the nonce doesn't match?  Should the leader skip?]
+      Transition message with the payload computed as described below.
 
    If continuing, the payload of the leader's Transition message is
-   computed as follows.  Let leader_message denote the last VDAF message
-   it computed and let helper_message denote the last VDAF message it
-   received from the helper.  The payload of the the Transition message
-   is computed as
+   computed as follows.  Let leader_outbound denote the last VDAF
+   message it computed and let helper_outbound denote the last VDAF
+   message it received from the helper.  The payload of the the
+   Transition message is computed as
 
-   payload = prep_shares_to_prep(agg_param,
-                                 [leader_payload,
-                                  helper_payload])
+   inbound = prep_shares_to_prep(agg_param,
+                                 [leader_outbound,
+                                  helper_outbound])
 
    and its next state transition is computed as
 
-   out = prep_state.next(payload)
+   out = prep_state.next(inbound)
 
    If either of these operations fails, then the leader moves to state
    FAILED without sending a message to the helper.  Otherwise it
    interprets out as follows.  If this is the last round of VDAF
    preparation phase, then out is the leader's output share, in which
-   case the leader finishes.  Otherwise, it continues with out as its
-   next VDAF message.  Either way, it moves to state WAITING.
+   case the leader finishes.  Otherwise, it interprets out as the tuple
+   (new_state, outbound), where new_state is its new preparation state
+   and outbound is its next VDAF messaage, and continues with outbound
+   as its next VDAF message.  Either way, it moves to state WAITING.
 
-4.3.2.4.  Helper
+4.4.2.4.  Helper
 
    The helper's state machine is shown below.
 
@@ -1092,7 +1099,7 @@ struct {
                                 aggregation.
 
    Upon receiving a ReportShare from the leader, the helper initializes
-   its preparation state as described in Section 4.3.2.2 (denoted by
+   its preparation state as described in Section 4.4.2.2 (denoted by
    prep_start in Figure 4).  It then executes the following procedure
    until it moves to a terminal state:
 
@@ -1100,7 +1107,7 @@ struct {
       FAILED.
 
    *  If finished, then send the leader the Transition message, move to
-      FINISHED, and proceed as described in Section 4.3.3.
+      FINISHED, and proceed as described in Section 4.4.3.
 
    *  If continued, then send the leader the Transition message and move
       to WAITING.
@@ -1109,40 +1116,42 @@ struct {
    follows.  If the leader continued, then update the prepare state and
    compute the next Transition message as described below.  Otherwise,
    if the leader finished or failed, then move to INVALID and proceed as
-   described in Section 4.3.4.2.
+   described in Section 4.4.4.2.
 
-   The helper computes its next state transition (denoted prep_next) as
+   The helper computes its next state transition as
 
-   out = prep_state.next(payload)
+   out = prep_next(state, inbound)
 
-   where payload is the previous VDAF message sent by the leader.  If
-   this operation fails, then the helper fails with error vdaf-prep-
-   error.  Otherwise, it interprets out as follows.  If this is the last
-   round of VDAF preparation phase, then out is the helper's output
-   share, in which case the helper finishes.  Otherwise, the helper
-   continues with out as its next VDAF message.
+   where inbound is the previous VDAF message sent by the leader and
+   state is its current preparation state.  If this operation fails,
+   then the helper fails with error vdaf-prep-error.  Otherwise, it
+   interprets out as follows.  If this is the last round of VDAF
+   preparation phase, then out is the helper's output share, in which
+   case the helper finishes and transitions to FINISHED.  Otherwise, the
+   helper interpets out as the tuple (new_state, outbound), where
+   new_state is its updated preperation state and outbound is its next
+   VDAF message, continues with outbound, and transitions to WAITING.
 
-4.3.3.  Aggregating Output Shares
+4.4.3.  Aggregating Output Shares
 
    Once processing of a report share reaches the FINISHED state, the
    aggregator stores the the recovered output share until the batch to
    which it pertains is collected.  To aggregate the output shares, the
    aggregator runs the aggregation algorithm specified by the VDAF:
 
-   agg_share = output_to_aggregate_shares(agg_param,
-                                          output_shares)
+   agg_share = out_shares_to_agg_share(agg_param, out_shares)
 
    Note that for most VDAFs, it is possible to aggregate output shares
    as they arrive rather than wait until the batch is collected.  To do
    so however, it is necessary to enforce the batch parameters as
-   described in Section 4.5 so that the aggregator knows which aggregate
+   described in Section 4.6 so that the aggregator knows which aggregate
    share to update.
 
    The leader needs to store a report for as long as it can be
    collected.  Once a report has been collected max_batch_lifetime
    times, the leader SHOULD remove the report from storage.
 
-4.3.4.  Aggregate Messages
+4.4.4.  Aggregate Messages
 
    The following messages are defined in this section and are used to
    aggregate a number of reports simultaneously:
@@ -1163,7 +1172,11 @@ struct {
        opaque tag[32];
    } AggregateReq;
 
-   As discussed in Section 4.3, the leader may choose to shard the task
+   [CP: Since these parameters are required for all variants, I think we
+   should consider moving task_id and job_id to precede the message
+   type.]
+
+   As discussed in Section 4.4, the leader may choose to shard the task
    of aggregating a large number of reports into any number of sub-
    batches.  The process of aggregating the reports in a leader-defined
    sub-batch is called an _aggregation job_. An AggregationJobID is a
@@ -1182,7 +1195,7 @@ struct {
    tag before interpreting the message's contents.  If verification
    fails, it MUST abort and alert its peer with error "invalidHmac".
 
-4.3.4.1.  Aggregate Initialization Request
+4.4.4.1.  Aggregate Initialization Request
 
    An AggregateInitReq message is sent from the leader to a helper in
    order to initialize the process of preparing a set of reports for
@@ -1206,9 +1219,9 @@ struct {
    clear.]
 
    Next, the leader extracts its own report shares and computes the
-   initial preparation state for each as described in Section 4.3.2.2.
+   initial preparation state for each as described in Section 4.4.2.2.
    It then removes from the report sequence any report for which the
-   initial state is FAILED.
+   transition state is FAILED.
 
    Let [aggregator] denote the helper's API endpoint.  The leader
    extracts the sequence of report shares for [aggregator] and sends
@@ -1216,10 +1229,10 @@ struct {
    message of type agg_init_req and with AggregateInitReq as the
    payload.
 
-   After verifying the authentication tag as described in Section 4.3.4,
+   After verifying the authentication tag as described in Section 4.4.4,
    the helper handles the AggregateInitReq by computing the initial
    preparation state for each ReportShare in AggregateInitReq.seq as
-   described in Section 4.3.2.2.  It then constructs an AggregateResp:
+   described in Section 4.4.2.2.  It then constructs an AggregateResp:
 
    struct {
      Transition seq<1..2^16-1>;
@@ -1229,32 +1242,32 @@ struct {
    The sequence of Transition messages corresponds to the ReportShare
    sequence of the AggregateInitReq.  The order of these sequences MUST
    be the same (i.e., the nonce of the first Transition MUST be the same
-   as first ReportShare and so on). tag is an HMAC-SHA256 tag over the
-   serialized message, excluding the tag field itself, computed using
-   the agg_auth_key shared by the aggregators.  The helper's response to
-   the leader is an HTTP 200 OK whose body is the AggregateResp.
+   as first ReportShare and so on).  The tag tag field is an HMAC-SHA256
+   tag over the serialized message, excluding the tag field itself,
+   computed using the agg_auth_key shared by the aggregators.  The
+   helper's response to the leader is an HTTP 200 OK whose body is the
+   AggregateResp.
 
-   After verifying the authentication tag, the leader handles the
-   AggregateResp as follows.  It first checks that the sequence of
-   Transition messages corresponds to the ReportShare sequence of the
-   AggregateInitReq.  If the messages appear out of order, any are
-   missing, or a nonce is not recognized, then the leader MUST abort and
-   alert its peer with error "XXX".
+   The leader handles the AggregateResp as follows.  It first verifies
+   the tag.  If this check fails, it MUST abort with error
+   "invalidHmac".
+
+   Next, it checks that the sequence of Transition messages corresponds
+   to the ReportShare sequence of the AggregateInitReq.  If any message
+   appears out of order or is missing, or a transition has an
+   unrecognized nonce, then the leader MUST abort with error
+   "unrecognizedMessage".
 
    Next, for each Transition, the leader proceeds as described in
-   Section 4.3.2.3.  If any state transition results in INVALID, this
+   Section 4.4.2.3.  If any state transition results in INVALID, this
    indicates that the helper has not computed the AggregateResp
-   correctly.  The leader MUST abort and alert its peer with error
-   "XXX".
-
-   [timg: In the above two paragraphs, we say that the leader should
-   alert its peer, but in these situations the helper is not awaiting a
-   reply from leader so it's not clear how to alert.]
+   correctly.  The leader MUST abort with error "unrecognizedMessage".
 
    Finally, the leader removes from the report sequence any report for
-   which the corresponding state is FAILED.
+   which the corresponding state is FAILED and proceeds as described in
+   the next section.
 
-4.3.4.2.  Aggregate Request
+4.4.4.2.  Aggregate Request
 
    An AggregateContinueReq is sent from the leader to the helper to
    advance the preparation state of each report being aggregated.  This
@@ -1268,15 +1281,13 @@ struct {
 
    The contents are the PPM task ID, the aggregation job ID, and the
    sequence of Transition messages corresponding to the report sequence
-   being aggregated.  The sequences MUST have the same order; any
-   Transition that appears out of order MUST be ignored by the helper.
-   (See below.)
+   being aggregated.  The sequences MUST have the same order.
 
    Let [aggregator] denote the helper's API endpoint.  The leader sends
    a POST request to [aggregator]/aggregate with an Aggregate message of
    type agg_cont_req with payload AggregateContinueReq.
 
-   After verifying the authentication tag as described in Section 4.3.4,
+   After verifying the authentication tag as described in Section 4.4.4,
    the helper processes the AggregateContinueReq as follows.  It first
    scans AggregateContinueReq.seq to check for any reports that may have
    been dropped by the leader in the previous step.
@@ -1284,22 +1295,21 @@ struct {
    Next, the helper processes the Transition messages from the leader.
    If any leader Transition contains an unrecognized nonce, the Helper
    sends a Transition with tran_type = failed and TransitionError =
-   unrecognized-nonce.  Otherwise, it constructs a transition as
-   described in Section 4.3.2.4.  If any state transition results in
-   INVALID, the helper MUST abort with error "XXX".
+   unrecognized-nonce.  [CP: It may be better to go to abort rather than
+   just fail, since this s tentamount to sending a malformed aggregate
+   request.]  If any Transition appears out-of-order, the helper MUST
+   abort with error "unrecognizedMessage".
 
-   [CP: It may be better to go to INVALID, rather than FAILED, if we get
-   a nonce we don't recognize.  Our thinking is that sending a nonce
-   that the client hasn't seen before is tentamount to sending a
-   malformed aggregate request, and it may be best to treat these the
-   same.]
+   Next, it constructs a transition as described in Section 4.4.2.4.  If
+   any state transition results in INVALID, the helper MUST abort with
+   error "unrecognizedMessage".
 
    Next, the helper constructs an AggregateResp containing its next
    flight of Transition messages and it updated state.  The messages
    MUST appear in the same order as AggregateContinueReq.seq.  The
    helper's response is an HTTP 200 OK whose body is the AggregateResp.
 
-4.3.4.3.  Aggregate Share Request
+4.4.4.3.  Aggregate Share Request
 
    Once the aggregators have verified at least as many reports as
    required for the PPM task, the leader sends to each helper a POST
@@ -1335,7 +1345,7 @@ struct {
    After verifying the authentication tag, the helper processes the
    AggregateShareReq as follows.  It first ensures that the request
    meets the requirements for batch parameters following the procedure
-   in Section 4.5.  If the batch parameters are invalid, then it MUST
+   in Section 4.6.  If the batch parameters are invalid, then it MUST
    abort with error "XXX".
 
    Next, it computes a checksum based on its view of the output shares
@@ -1344,7 +1354,7 @@ struct {
    then it MUST abort with error "XXX".
 
    Next, it computes the aggregate share for the batch interval as
-   described in Section 4.3.3, obtaining an opaque byte string agg_share
+   described in Section 4.4.3, obtaining an opaque byte string agg_share
    whose structure is specific to the VDAF in use.  The helper encrypts
    the agg_share as follows:
 
@@ -1374,9 +1384,9 @@ struct {
    tag over the serialized message, excluding the tag field itself,
    computed using the agg_auth_key shared by the aggregators.
 
-   After verifying the authentication tag as described in Section 4.3.4,
+   After verifying the authentication tag as described in Section 4.4.4,
    the leader uses the HpkeCiphertext to respond to a collect request
-   (see Section 4.4).
+   (see Section 4.5).
 
    The leader MAY make multiple aggregate-share requests for a given
    batch interval and MUST get the same result each time.
@@ -1384,9 +1394,9 @@ struct {
    After issuing an aggregate-share request for a given batch interval,
    it is an error for the leader to issue any more aggregate or
    aggregate-init requests for reports in the batch interval.  These
-   reports will be rejected by helpers as described in Section 4.3.2.2.
+   reports will be rejected by helpers as described in Section 4.4.2.2.
 
-4.4.  Collecting Results
+4.5.  Collecting Results
 
    [OPEN ISSUE: Decide if and how the collector's request is
    authenticated.  If not, then we need to ensure that collect job URIs
@@ -1423,7 +1433,7 @@ struct {
 
    Upon receipt of a CollectReq, the leader begins by checking that the
    request meets the requirements of the batch parameters using the
-   procedure in Section 4.5.  If not, it MUST abort with error "XXX".
+   procedure in Section 4.6.  If not, it MUST abort with error "XXX".
 
    Next, the leader sends the collector a response with HTTP status 303
    See Other and a Location header containing a URI identifying the
@@ -1432,7 +1442,7 @@ struct {
 
    The leader then begins working with the helper to prepare the shares
    falling into CollectReq.batch_interval (or continues this process,
-   depending on the VDAF) as described in Section 4.3.
+   depending on the VDAF) as described in Section 4.4.
 
    After receiving the response to its CollectReq, the collector makes
    an HTTP GET request to the collect job URI to check on the status of
@@ -1444,12 +1454,12 @@ struct {
    Once all the necessary reports have been prepared, the leader obtains
    the helper's encrypted aggregate share for the batch interval by
    sending an AggregateShareReq to the helper as described in
-   Section 4.3.4.3.  The leader then computes its own aggregate share by
+   Section 4.4.4.3.  The leader then computes its own aggregate share by
    aggregating all of the prepared output shares that fall within the
    batch interval.
 
    Next, the leader retrieves its own aggregate share agg_share for the
-   batch interval as described in Section 4.3.3.  Finally, it encrypts
+   batch interval as described in Section 4.4.3.  Finally, it encrypts
    it under the collector's HPKE public key as follows:
 
    enc, context = SetupBaseS(pk, CollectReq.task_id ||
@@ -1486,7 +1496,7 @@ struct {
    when describing how subscribers should fetch certificates:
    https://datatracker.ietf.org/doc/html/rfc8555#section-7.4.2]
 
-4.5.  Validating Batch Parameters
+4.6.  Validating Batch Parameters
 
    Before the leader responds to a CollectReq or a helper responds to an
    AggregateShareReq, it must first check that the request does not
@@ -1515,7 +1525,7 @@ struct {
       and alerts the peer with "XXX request exceeds the batch's privacy
       budget".
 
-4.6.  Anti-replay
+4.7.  Anti-replay
 
    [CP: This section is a bit messy.  Some of it should go to security
    considerations, other parts could be abosrbed by other sections.
@@ -1529,7 +1539,7 @@ struct {
    this specification requires the aggregators to detect and filter out
    replayed reports.  In addition, it prevents the aggregators from
    adding additional reports to a batch after that batch has been
-   collected.  (See Section 4.3.2.2 for details.)
+   collected.  (See Section 4.4.2.2 for details.)
 
    [OPEN ISSUE: This has the potential to require aggregators to store
    nonce sets indefinitely.  See issue#180.]
@@ -1538,12 +1548,12 @@ struct {
    nonce generated by the client with a nonce its peer has not yet seen.
    To prevent this, clients incorporate the nonce into the AAD for HPKE
    encryption, ensuring that the report share is only aggregated if the
-   aggregator is given the correct nonce.  (See Section 4.2.2.)
+   aggregator is given the correct nonce.  (See Section 4.3.2.)
 
    Aggregators prevent the same report from being used in multiple
    batches (except as required by the protocol) by only responding to
    valid requests for aggregate shares following the procedure described
-   in Section 4.5.
+   in Section 4.6.
 
    [CP: Work ends here.]
 
@@ -1594,7 +1604,7 @@ struct {
       of tracking batch report size with optional support for state
       offloading.  Some of this state may be used for replay attack
       mitigation.  The replay mitigation strategy is described in
-      Section 4.6.
+      Section 4.7.
 
    Beyond the minimal capabilities required of helpers, leaders are
    generally required to:
@@ -1607,7 +1617,7 @@ struct {
    In addition, for each PPM task, leaders are required to:
 
    *  Implement and store state for the form of inter- and intra-batch
-      replay mitigation in Section 4.6; and
+      replay mitigation in Section 4.7; and
 
    *  Store helper state.
 
@@ -1685,7 +1695,7 @@ struct {
    aggregate shares in its encrypted state, thereby offloading this
    state to the leader.)  This is due to the requirement that the batch
    interval respect the boundaries defined by the PPM parameters.  (See
-   Section 4.5.)
+   Section 4.6.)
 
 6.  Security Considerations
 
@@ -2058,26 +2068,26 @@ struct {
    This specification defines the following protocol messages, along
    with their corresponding media types types:
 
-   *  HpkeConfig Section 4.1: "application/ppm-hpke-config"
+   *  HpkeConfig Section 4.2: "application/ppm-hpke-config"
 
-   *  Report Section 4.2.2: "message/ppm-report"
+   *  Report Section 4.3.2: "message/ppm-report"
 
-   *  AggregateReq Section 4.3.4.2: "message/ppm-aggregate-req"
+   *  AggregateReq Section 4.4.4.2: "message/ppm-aggregate-req"
 
-   *  AggregateContinueReq Section 4.3.4.2: "message/ppm-aggregate-
+   *  AggregateContinueReq Section 4.4.4.2: "message/ppm-aggregate-
       continue-req"
 
-   *  AggregateResp Section 4.3.4.2: "message/ppm-aggregate-resp"
+   *  AggregateResp Section 4.4.4.2: "message/ppm-aggregate-resp"
 
-   *  AggregateShareReq Section 4.3.4.3: "message/ppm-aggregate-share-
+   *  AggregateShareReq Section 4.4.4.3: "message/ppm-aggregate-share-
       req"
 
-   *  AggregateShareResp Section 4.3.4.3: "message/ppm-aggregate-share-
+   *  AggregateShareResp Section 4.4.4.3: "message/ppm-aggregate-share-
       resp"
 
-   *  CollectReq Section 4.4: "message/ppm-collect-req"
+   *  CollectReq Section 4.5: "message/ppm-collect-req"
 
-   *  CollectResp Section 4.4: "message/ppm-collect-resp"
+   *  CollectResp Section 4.5: "message/ppm-collect-resp"
 
    The definition for each media type is in the following subsections.
 
@@ -2103,7 +2113,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.1
+   Security considerations:  see Section 4.2
 
    Interoperability considerations:  N/A
 
@@ -2144,7 +2154,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.2.2
+   Security considerations:  see Section 4.3.2
 
    Interoperability considerations:  N/A
 
@@ -2185,7 +2195,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.3.4.2
+   Security considerations:  see Section 4.4.4.2
 
    Interoperability considerations:  N/A
 
@@ -2226,7 +2236,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.3.4.2
+   Security considerations:  see Section 4.4.4.2
 
    Interoperability considerations:  N/A
 
@@ -2267,7 +2277,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.3.4.3
+   Security considerations:  see Section 4.4.4.3
 
    Interoperability considerations:  N/A
 
@@ -2308,7 +2318,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.3.4.3
+   Security considerations:  see Section 4.4.4.3
 
    Interoperability considerations:  N/A
 
@@ -2349,7 +2359,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.4
+   Security considerations:  see Section 4.5
 
    Interoperability considerations:  N/A
 
@@ -2390,7 +2400,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.4
+   Security considerations:  see Section 4.5
 
    Interoperability considerations:  N/A
 
