@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 15 September 2022                                    Cloudflare
+Expires: 16 September 2022                                    Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                           14 March 2022
+                                                           15 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 15 September 2022.
+   This Internet-Draft will expire on 16 September 2022.
 
 Copyright Notice
 
@@ -527,7 +527,7 @@ struct {
       the HTTP server responds with an HTTP error status as described in
       Section 3.1.
 
-   *  If a fatal error is encountered while processing an HTTP request,
+   *  If a fatal error is encountered while processing an HTTP response,
       the HTTP client... [TODO: Figure out what behavior is called for
       here.  An HTTP request should be sent that conveys the error.]
 
@@ -1066,11 +1066,10 @@ struct {
    FAILED without sending a message to the helper.  Otherwise it
    interprets out as follows.  If this is the last round of VDAF
    preparation phase, then out is the leader's output share, in which
-   case the leader finishes.  Otherwise, it interpresets out as the
-   tuple (new_state, outbound), where new_state is its new preparation
-   state and outbound is its next VDAF messaage, and continues with
-   outbound as its next VDAF message.  Either way, it moves to state
-   WAITING.
+   case the leader finishes.  Otherwise, it interprets out as the tuple
+   (new_state, outbound), where new_state is its new preparation state
+   and outbound is its next VDAF messaage, and continues with outbound
+   as its next VDAF message.  Either way, it moves to state WAITING.
 
 4.4.2.4.  Helper
 
@@ -1253,10 +1252,10 @@ struct {
    the tag.  If this check fails, it MUST abort with error
    "invalidHmac".
 
-   Next, it first checks that the sequence of Transition messages
-   corresponds to the ReportShare sequence of the AggregateInitReq.  If
-   any message appears out of order or is missing, or a transition has
-   an unrecognized nonce, then the leader MUST abort with error
+   Next, it checks that the sequence of Transition messages corresponds
+   to the ReportShare sequence of the AggregateInitReq.  If any message
+   appears out of order or is missing, or a transition has an
+   unrecognized nonce, then the leader MUST abort with error
    "unrecognizedMessage".
 
    Next, for each Transition, the leader proceeds as described in
