@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 16 September 2022                                    Cloudflare
+Expires: 17 September 2022                                    Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                           15 March 2022
+                                                           16 March 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 16 September 2022.
+   This Internet-Draft will expire on 17 September 2022.
 
 Copyright Notice
 
@@ -641,7 +641,7 @@ struct {
    encrypt an input share, the client first generates an HPKE
    [I-D.irtf-cfrg-hpke] context for the aggregator by running
 
- enc, context = SetupBaseS(pk, Report.task_id || "ppm-02 input share" ||
+ enc, context = SetupBaseS(pk, Report.task_id || "ppm-01 input share" ||
                                0x01 || server_role)
 
    [OPEN ISSUE: Is 0x01 ambiguous?]
@@ -668,12 +668,13 @@ struct {
    measurement value in more than one report if the leader responds with
    status 200 and an empty body.
 
-   The leader responds to requests with out-of-date HpkeConfig.id
-   values, indicated by EncryptedInputShare.config_id, with status 400
-   and an error of type 'outdatedConfig'.  Clients SHOULD invalidate any
-   cached aggregator HpkeConfig and retry with a freshly generated
-   Report.  If this retried report does not succeed, clients MUST abort
-   and discontinue retrying.
+   The leader responds to requests whose leader encrypted input share
+   uses an out-of-date HpkeConfig.id value, indicated by
+   HpkeCiphertext.config_id, with status 400 and an error of type
+   'outdatedConfig'.  Clients SHOULD invalidate any cached aggregator
+   HpkeConfig and retry with a freshly generated Report.  If this
+   retried report does not succeed, clients MUST abort and discontinue
+   retrying.
 
    The leader MUST ignore any report whose nonce contains a timestamp
    that falls in a batch interval for which it has received at least one
@@ -846,7 +847,7 @@ AggregateShareReq (State 4) -------------------------------->
    it attempts to decrypt the payload with the following procedure:
 
    context = SetupBaseR(helper_share.enc, sk, task_id ||
-                        "ppm-02 input share" || 0x01 || server_role)
+                        "ppm-01 input share" || 0x01 || server_role)
    input_share = context.Open(nonce || extensions, helper_share)
 
    where sk is the HPKE secret key, task_id is AggregateReq.task_id and
@@ -937,7 +938,7 @@ AggregateShareReq (State 4) -------------------------------->
    collector's public key as follows:
 
    enc, context = SetupBaseS(pk, task_id,
-                             "ppm-02 aggregate share" || 0x03 || 0x00)
+                             "ppm-01 aggregate share" || 0x03 || 0x00)
    encrypted_agg_share = context.Seal(batch_interval, agg_share)
 
    where pk is the HPKE public key encoded by the collector's HPKE key
@@ -1016,7 +1017,7 @@ AggregateShareReq (State 4) -------------------------------->
    collector's HPKE public key as follows:
 
  enc, context = SetupBaseS(pk, CollectReq.task_id ||
-                               "ppm-02 aggregate share" || 0x02 || 0x00)
+                               "ppm-01 aggregate share" || 0x02 || 0x00)
  encrypted_agg_share = context.Seal(CollectReq.batch_interval,
                                     agg_share)
 
@@ -1056,7 +1057,7 @@ AggregateShareReq (State 4) -------------------------------->
    following procedure:
 
    context = SetupBaseR(share.enc, sk,
-                        "ppm-02 aggregate share" ||
+                        "ppm-01 aggregate share" ||
                         task_id || server_role || 0x00)
    input_share = context.Open(batch_interval, share.payload)
 
