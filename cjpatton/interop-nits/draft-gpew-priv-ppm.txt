@@ -1266,7 +1266,7 @@ struct {
    correctly.  The leader MUST abort with error "unrecognizedMessage".
 
    Finally, the leader removes from the report sequence any report for
-   which the corresponding state is FAILEDi and proceeds as described in
+   which the corresponding state is FAILED and proceeds as described in
    the next section, even if the sequence is empty.
 
 4.4.4.2.  Aggregate Continuation Request
@@ -1288,7 +1288,7 @@ struct {
    type agg_cont_req with payload AggregateContinueReq.
 
    After verifying the authentication tag as described in Section 4.4.4,
-   the helper beings by scanning AggregateContinueReq.seq to check for
+   the helper begins by scanning AggregateContinueReq.seq to check for
    any reports that may have been dropped by the leader in the previous
    step.
 

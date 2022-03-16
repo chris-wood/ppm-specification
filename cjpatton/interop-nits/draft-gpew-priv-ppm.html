@@ -2653,7 +2653,7 @@ If any state transition results in INVALID, this indicates that the helper has
 not computed the AggregateResp correctly. The leader <span class="bcp14">MUST</span> abort with error
 "unrecognizedMessage".<a href="#section-4.4.4.1-12" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.1-13">Finally, the leader removes from the report sequence any report for which the
-corresponding state is FAILEDi and proceeds as described in the next section,
+corresponding state is FAILED and proceeds as described in the next section,
 even if the sequence is empty.<a href="#section-4.4.4.1-13" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2678,7 +2678,7 @@ report sequence being aggregated. The sequences <span class="bcp14">MUST</span> 
 request to <code>[aggregator]/aggregate</code> with an Aggregate message of type
 <code>agg_cont_req</code> with payload AggregateContinueReq.<a href="#section-4.4.4.2-4" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.2-5">After verifying the authentication tag as described in
-<a href="#aggregate-message-auth" class="xref">Section 4.4.4</a>, the helper beings by scanning
+<a href="#aggregate-message-auth" class="xref">Section 4.4.4</a>, the helper begins by scanning
 <code>AggregateContinueReq.seq</code> to check for any reports that may have been dropped
 by the leader in the previous step.<a href="#section-4.4.4.2-5" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.2-6">Next, the helper processes the Transition messages from the leader. If any
