@@ -1219,7 +1219,8 @@ struct {
    Next, the leader extracts its own report shares and computes the
    initial preparation state for each as described in Section 4.4.2.2.
    It then removes from the report sequence any report for which the
-   transition state is FAILED.
+   transition state is FAILED.  If the resulting sequence is empty, then
+   the leader halts without issuing a request.
 
    Let [aggregator] denote the helper's API endpoint.  The leader
    extracts the sequence of report shares for [aggregator] and sends
@@ -1265,8 +1266,8 @@ struct {
    correctly.  The leader MUST abort with error "unrecognizedMessage".
 
    Finally, the leader removes from the report sequence any report for
-   which the corresponding state is FAILED and proceeds as described in
-   the next section.
+   which the corresponding state is FAILEDi and proceeds as described in
+   the next section, even if the sequence is empty.
 
 4.4.4.2.  Aggregate Continuation Request
 
@@ -1301,7 +1302,7 @@ struct {
    helper MUST abort with error "unrecognizedMessage".
 
    Next, the helper constructs an AggregateResp containing its next
-   flight of Transition messages and it updated state.  The messages
+   flight of Transition messages and its updated state.  The messages
    MUST appear in the same order as AggregateContinueReq.seq.  The
    helper's response is an HTTP 200 OK whose body is the AggregateResp.
    The leader processes this message as described in Section 4.4.4.1.
