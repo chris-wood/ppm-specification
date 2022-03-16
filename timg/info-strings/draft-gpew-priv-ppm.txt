@@ -641,10 +641,8 @@ struct {
    encrypt an input share, the client first generates an HPKE
    [I-D.irtf-cfrg-hpke] context for the aggregator by running
 
- enc, context = SetupBaseS(pk, Report.task_id || "ppm-01 input share" ||
+ enc, context = SetupBaseS(pk, Report.task_id || "ppm-00 input share" ||
                                0x01 || server_role)
-
-   [OPEN ISSUE: Is 0x01 ambiguous?]
 
    where pk is the aggregator's public key and server_role is the Role
    of the intended recipient (0x02 for the leader and 0x03 for the
@@ -847,17 +845,17 @@ AggregateShareReq (State 4) -------------------------------->
    it attempts to decrypt the payload with the following procedure:
 
    context = SetupBaseR(helper_share.enc, sk, task_id ||
-                        "ppm-01 input share" || 0x01 || server_role)
+                        "ppm-00 input share" || 0x01 || server_role)
    input_share = context.Open(nonce || extensions, helper_share)
 
    where sk is the HPKE secret key, task_id is AggregateReq.task_id and
    server_role is the role of the server (0x02 for the leader and 0x03
-   for the helper). nonce and extensions are obtained from the
-   corresponding fields in AggregateSubReq.  If decryption fails, then
-   the sub-response consists of a "decryption error" alert.  [See
-   issue#57.]  Otherwise, the helper handles the request for its
-   plaintext input share input_share and updates its state as specified
-   by the PPM protocol.
+   for the helper; 0x01, the client role, is used as the sender). nonce
+   and extensions are obtained from the corresponding fields in
+   AggregateSubReq.  If decryption fails, then the sub-response consists
+   of a "decryption error" alert.  [See issue#57.]  Otherwise, the
+   helper handles the request for its plaintext input share input_share
+   and updates its state as specified by the PPM protocol.
 
    After processing all of the sub-requests, the helper encrypts its
    updated state and constructs its response to the aggregate request.
@@ -938,7 +936,7 @@ AggregateShareReq (State 4) -------------------------------->
    collector's public key as follows:
 
    enc, context = SetupBaseS(pk, task_id,
-                             "ppm-01 aggregate share" || 0x03 || 0x00)
+                             "ppm-00 aggregate share" || 0x03 || 0x00)
    encrypted_agg_share = context.Seal(batch_interval, agg_share)
 
    where pk is the HPKE public key encoded by the collector's HPKE key
@@ -1017,7 +1015,7 @@ AggregateShareReq (State 4) -------------------------------->
    collector's HPKE public key as follows:
 
  enc, context = SetupBaseS(pk, CollectReq.task_id ||
-                               "ppm-01 aggregate share" || 0x02 || 0x00)
+                               "ppm-00 aggregate share" || 0x02 || 0x00)
  encrypted_agg_share = context.Seal(CollectReq.batch_interval,
                                     agg_share)
 
@@ -1057,7 +1055,7 @@ AggregateShareReq (State 4) -------------------------------->
    following procedure:
 
    context = SetupBaseR(share.enc, sk,
-                        "ppm-01 aggregate share" ||
+                        "ppm-00 aggregate share" ||
                         task_id || server_role || 0x00)
    input_share = context.Open(batch_interval, share.payload)
 

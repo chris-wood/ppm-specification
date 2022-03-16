@@ -1974,43 +1974,42 @@ share, the client first generates an HPKE <span>[<a href="#I-D.irtf-cfrg-hpke" c
 the aggregator by running<a href="#section-4.2.2-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-6">
 <pre>
-enc, context = SetupBaseS(pk, Report.task_id || "ppm-01 input share" ||
+enc, context = SetupBaseS(pk, Report.task_id || "ppm-00 input share" ||
                               0x01 || server_role)
 </pre><a href="#section-4.2.2-6" class="pilcrow">¶</a>
 </div>
-<p id="section-4.2.2-7">[OPEN ISSUE: Is <code>0x01</code> ambiguous?]<a href="#section-4.2.2-7" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-8">where <code>pk</code> is the aggregator's public key and <code>server_role</code> is the Role of the
+<p id="section-4.2.2-7">where <code>pk</code> is the aggregator's public key and <code>server_role</code> is the Role of the
 intended recipient (<code>0x02</code> for the leader and <code>0x03</code> for the helper). In
 general, the info string for computing the HPKE context is suffixed by two
 bytes, the first of which identifies the role of the sender and the second of
-which identifies the role of the intended recipient.<a href="#section-4.2.2-8" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-9"><code>enc</code> is the HPKE encapsulated key and <code>context</code> is the HPKE context used by the
-client for encryption. The payload is encrypted as<a href="#section-4.2.2-9" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.2.2-10">
+which identifies the role of the intended recipient.<a href="#section-4.2.2-7" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-8"><code>enc</code> is the HPKE encapsulated key and <code>context</code> is the HPKE context used by the
+client for encryption. The payload is encrypted as<a href="#section-4.2.2-8" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.2.2-9">
 <pre>
 payload = context.Seal(nonce || extensions, input_share)
-</pre><a href="#section-4.2.2-10" class="pilcrow">¶</a>
+</pre><a href="#section-4.2.2-9" class="pilcrow">¶</a>
 </div>
-<p id="section-4.2.2-11">where <code>input_share</code> is the aggregator's input share and <code>nonce</code> and <code>extensions</code>
+<p id="section-4.2.2-10">where <code>input_share</code> is the aggregator's input share and <code>nonce</code> and <code>extensions</code>
 are the corresponding fields of <code>Report</code>. Clients <span class="bcp14">MUST NOT</span> use the same <code>enc</code>
-for multiple reports.<a href="#section-4.2.2-11" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-12">The leader responds to well-formed requests to <code>[leader]/upload</code> with status 200
+for multiple reports.<a href="#section-4.2.2-10" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-11">The leader responds to well-formed requests to <code>[leader]/upload</code> with status 200
 and an empty body. Malformed requests are handled as described in <a href="#errors" class="xref">Section 3.1</a>.
 Clients <span class="bcp14">SHOULD NOT</span> upload the same measurement value in more than one report if
-the leader responds with status 200 and an empty body.<a href="#section-4.2.2-12" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-13">The leader responds to requests whose leader encrypted input share uses an
+the leader responds with status 200 and an empty body.<a href="#section-4.2.2-11" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-12">The leader responds to requests whose leader encrypted input share uses an
 out-of-date <code>HpkeConfig.id</code> value, indicated by <code>HpkeCiphertext.config_id</code>, with
 status 400 and an error of type 'outdatedConfig'. Clients <span class="bcp14">SHOULD</span> invalidate any
 cached aggregator <code>HpkeConfig</code> and retry with a freshly generated Report. If
 this retried report does not succeed, clients <span class="bcp14">MUST</span> abort and discontinue
-retrying.<a href="#section-4.2.2-13" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-14">The leader <span class="bcp14">MUST</span> ignore any report whose nonce contains a timestamp that falls in
+retrying.<a href="#section-4.2.2-12" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-13">The leader <span class="bcp14">MUST</span> ignore any report whose nonce contains a timestamp that falls in
 a batch interval for which it has received at least one collect request from the
 collector. (See <a href="#pa-collect" class="xref">Section 4.4</a>.) Otherwise, comparing the aggregate result to
 the previous aggregate result may result in a privacy violation. (Note that the
 helpers enforce this as well; see <a href="#aggregate-request" class="xref">Section 4.3.1</a>.) In addition, the
 leader <span class="bcp14">SHOULD</span> abort the upload protocol and alert the client with error
-"staleReport".<a href="#section-4.2.2-14" class="pilcrow">¶</a></p>
+"staleReport".<a href="#section-4.2.2-13" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="upload-extensions">
@@ -2187,17 +2186,18 @@ following procedure:<a href="#section-4.3.1-12" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.3.1-13">
 <pre>
 context = SetupBaseR(helper_share.enc, sk, task_id ||
-                     "ppm-01 input share" || 0x01 || server_role)
+                     "ppm-00 input share" || 0x01 || server_role)
 input_share = context.Open(nonce || extensions, helper_share)
 </pre><a href="#section-4.3.1-13" class="pilcrow">¶</a>
 </div>
 <p id="section-4.3.1-14">where <code>sk</code> is the HPKE secret key, <code>task_id</code> is <code>AggregateReq.task_id</code> and
 <code>server_role</code> is the role of the server (<code>0x02</code> for the leader and <code>0x03</code> for
-the helper). <code>nonce</code> and <code>extensions</code> are obtained from the
-corresponding fields in <code>AggregateSubReq</code>. If decryption fails, then the
-sub-response consists of a "decryption error" alert. [See issue#57.] Otherwise,
-the helper handles the request for its plaintext input share <code>input_share</code> and
-updates its state as specified by the PPM protocol.<a href="#section-4.3.1-14" class="pilcrow">¶</a></p>
+the helper; <code>0x01</code>, the client role, is used as the sender). <code>nonce</code> and
+<code>extensions</code> are obtained from the corresponding fields in <code>AggregateSubReq</code>. If
+decryption fails, then the sub-response consists of a "decryption error" alert.
+[See issue#57.] Otherwise, the helper handles the request for its plaintext
+input share <code>input_share</code> and updates its state as specified by the PPM
+protocol.<a href="#section-4.3.1-14" class="pilcrow">¶</a></p>
 <p id="section-4.3.1-15">After processing all of the sub-requests, the helper encrypts its updated state
 and constructs its response to the aggregate request.<a href="#section-4.3.1-15" class="pilcrow">¶</a></p>
 <div id="leader-state">
@@ -2294,7 +2294,7 @@ public key as follows:<a href="#section-4.3.2-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.3.2-10">
 <pre>
 enc, context = SetupBaseS(pk, task_id,
-                          "ppm-01 aggregate share" || 0x03 || 0x00)
+                          "ppm-00 aggregate share" || 0x03 || 0x00)
 encrypted_agg_share = context.Seal(batch_interval, agg_share)
 </pre><a href="#section-4.3.2-10" class="pilcrow">¶</a>
 </div>
@@ -2377,7 +2377,7 @@ encrypts it under the collector's HPKE public key as follows:<a href="#section-4
 <div class="alignLeft art-text artwork" id="section-4.4-11">
 <pre>
 enc, context = SetupBaseS(pk, CollectReq.task_id ||
-                              "ppm-01 aggregate share" || 0x02 || 0x00)
+                              "ppm-00 aggregate share" || 0x02 || 0x00)
 encrypted_agg_share = context.Seal(CollectReq.batch_interval,
                                    agg_share)
 </pre><a href="#section-4.4-11" class="pilcrow">¶</a>
@@ -2414,7 +2414,7 @@ procedure:<a href="#section-4.4-20" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.4-21">
 <pre>
 context = SetupBaseR(share.enc, sk,
-                     "ppm-01 aggregate share" ||
+                     "ppm-00 aggregate share" ||
                      task_id || server_role || 0x00)
 input_share = context.Open(batch_interval, share.payload)
 </pre><a href="#section-4.4-21" class="pilcrow">¶</a>
