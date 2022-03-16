@@ -2270,7 +2270,6 @@ enum {
   hpke-unknown-config-id(3),
   hpke-decrypt-error(4),
   vdaf-prep-error(5),
-  unrecognized-nonce(6),
 } TransitionError;
 </pre><a href="#section-4.4.2.1-8" class="pilcrow">¶</a>
 </div>
@@ -2621,9 +2620,12 @@ sequence of report shares for <code>[aggregator]</code> and sends sends a POST r
 <code>[aggregator]/aggregate</code> with an Aggregate message of type <code>agg_init_req</code>
 and with AggregateInitReq as the payload.<a href="#section-4.4.4.1-6" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.1-7">After verifying the authentication tag as described in
-<a href="#aggregate-message-auth" class="xref">Section 4.4.4</a>, the helper handles the AggregateInitReq by computing
-the initial preparation state for each ReportShare in <code>AggregateInitReq.seq</code> as
-described in <a href="#prep-start" class="xref">Section 4.4.2.2</a>. It then constructs an AggregateResp:<a href="#section-4.4.4.1-7" class="pilcrow">¶</a></p>
+<a href="#aggregate-message-auth" class="xref">Section 4.4.4</a>, the helper first checks that the nonces in
+<code>AggregateInitReq.seq</code> are all distinct. If two ReportShare messages have the
+same nonce, then the helper <span class="bcp14">MUST</span> abort with error "unrecognizedMessage". Next,
+the helper handles the AggregateInitReq by computing the initial preparation
+state for each ReportShare in <code>AggregateInitReq.seq</code> as described in
+<a href="#prep-start" class="xref">Section 4.4.2.2</a>. It then constructs an AggregateResp:<a href="#section-4.4.4.1-7" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.4.4.1-8">
 <pre>
 struct {
@@ -2641,10 +2643,10 @@ aggregators. The helper's response to the leader is an HTTP 200 OK whose body is
 the AggregateResp.<a href="#section-4.4.4.1-9" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.1-10">The leader handles the AggregateResp as follows. It first verifies the tag. If
 this check fails, it <span class="bcp14">MUST</span> abort with error "invalidHmac".<a href="#section-4.4.4.1-10" class="pilcrow">¶</a></p>
-<p id="section-4.4.4.1-11">Next, it checks that the sequence of Transition messages corresponds to
-the ReportShare sequence of the AggregateInitReq. If any message appears out of
-order or is missing, or a transition has an unrecognized nonce, then the leader
-<span class="bcp14">MUST</span> abort with error "unrecognizedMessage".<a href="#section-4.4.4.1-11" class="pilcrow">¶</a></p>
+<p id="section-4.4.4.1-11">Next, it checks that the sequence of Transition messages corresponds to the
+ReportShare sequence of the AggregateInitReq. If any message appears out of
+order, is missing, has an unrecognized nonce, or if two messages have the same
+nonce, then the leader <span class="bcp14">MUST</span> abort with error "unrecognizedMessage".<a href="#section-4.4.4.1-11" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.1-12">Next, for each Transition, the leader proceeds as described in <a href="#prep-leader" class="xref">Section 4.4.2.3</a>.
 If any state transition results in INVALID, this indicates that the helper has
 not computed the AggregateResp correctly. The leader <span class="bcp14">MUST</span> abort with error
@@ -2655,8 +2657,8 @@ corresponding state is FAILED and proceeds as described in the next section.<a h
 </div>
 <div id="aggregate-request">
 <section id="section-4.4.4.2">
-            <h5 id="name-aggregate-request">
-<a href="#section-4.4.4.2" class="section-number selfRef">4.4.4.2. </a><a href="#name-aggregate-request" class="section-name selfRef">Aggregate Request</a>
+            <h5 id="name-aggregate-continuation-requ">
+<a href="#section-4.4.4.2" class="section-number selfRef">4.4.4.2. </a><a href="#name-aggregate-continuation-requ" class="section-name selfRef">Aggregate Continuation Request</a>
             </h5>
 <p id="section-4.4.4.2-1">An AggregateContinueReq is sent from the leader to the helper to advance the
 preparation state of each report being aggregated. This message is defined as
@@ -2674,22 +2676,21 @@ report sequence being aggregated. The sequences <span class="bcp14">MUST</span> 
 request to <code>[aggregator]/aggregate</code> with an Aggregate message of type
 <code>agg_cont_req</code> with payload AggregateContinueReq.<a href="#section-4.4.4.2-4" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.2-5">After verifying the authentication tag as described in
-<a href="#aggregate-message-auth" class="xref">Section 4.4.4</a>, the helper processes the AggregateContinueReq as
-follows. It first scans <code>AggregateContinueReq.seq</code> to check for any reports that
-may have been dropped by the leader in the previous step.<a href="#section-4.4.4.2-5" class="pilcrow">¶</a></p>
+<a href="#aggregate-message-auth" class="xref">Section 4.4.4</a>, the helper beings by scanning
+<code>AggregateContinueReq.seq</code> to check for any reports that may have been dropped
+by the leader in the previous step.<a href="#section-4.4.4.2-5" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.2-6">Next, the helper processes the Transition messages from the leader. If any
-leader Transition contains an unrecognized nonce, the Helper sends a Transition
-with <code>tran_type = failed</code> and <code>TransitionError = unrecognized-nonce</code>. [CP: It
-may be better to go to abort rather than just fail, since this s tentamount to
-sending a malformed aggregate request.] If any Transition appears out-of-order,
-the helper <span class="bcp14">MUST</span> abort with error "unrecognizedMessage".<a href="#section-4.4.4.2-6" class="pilcrow">¶</a></p>
-<p id="section-4.4.4.2-7">Next, it constructs a transition as described in <a href="#prep-helper" class="xref">Section 4.4.2.4</a>. If any state
-transition results in INVALID, the helper <span class="bcp14">MUST</span> abort with error
+message appears out of order or has an unrecognized nonce, or if any two
+messages have the same nonce, then the helper <span class="bcp14">MUST</span> abort with error
+"unrecognizedMessage".<a href="#section-4.4.4.2-6" class="pilcrow">¶</a></p>
+<p id="section-4.4.4.2-7">Next, the helper processes each Transition as described in <a href="#prep-helper" class="xref">Section 4.4.2.4</a>. If
+any state transition results in INVALID, the helper <span class="bcp14">MUST</span> abort with error
 "unrecognizedMessage".<a href="#section-4.4.4.2-7" class="pilcrow">¶</a></p>
 <p id="section-4.4.4.2-8">Next, the helper constructs an AggregateResp containing its next flight of
 Transition messages and it updated state. The messages <span class="bcp14">MUST</span> appear in the same
 order as <code>AggregateContinueReq.seq</code>. The helper's response is an HTTP 200 OK
-whose body is the AggregateResp.<a href="#section-4.4.4.2-8" class="pilcrow">¶</a></p>
+whose body is the AggregateResp. The leader processes this message as described
+in <a href="#aggregate-init-request" class="xref">Section 4.4.4.1</a>.<a href="#section-4.4.4.2-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="aggregate-share-request">

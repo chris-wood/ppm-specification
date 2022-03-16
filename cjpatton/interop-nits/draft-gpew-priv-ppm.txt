@@ -900,7 +900,6 @@ struct {
      hpke-unknown-config-id(3),
      hpke-decrypt-error(4),
      vdaf-prep-error(5),
-     unrecognized-nonce(6),
    } TransitionError;
 
    When an aggregator computes a Transition of type continued with
@@ -1229,7 +1228,10 @@ struct {
    payload.
 
    After verifying the authentication tag as described in Section 4.4.4,
-   the helper handles the AggregateInitReq by computing the initial
+   the helper first checks that the nonces in AggregateInitReq.seq are
+   all distinct.  If two ReportShare messages have the same nonce, then
+   the helper MUST abort with error "unrecognizedMessage".  Next, the
+   helper handles the AggregateInitReq by computing the initial
    preparation state for each ReportShare in AggregateInitReq.seq as
    described in Section 4.4.2.2.  It then constructs an AggregateResp:
 
@@ -1253,9 +1255,9 @@ struct {
 
    Next, it checks that the sequence of Transition messages corresponds
    to the ReportShare sequence of the AggregateInitReq.  If any message
-   appears out of order or is missing, or a transition has an
-   unrecognized nonce, then the leader MUST abort with error
-   "unrecognizedMessage".
+   appears out of order, is missing, has an unrecognized nonce, or if
+   two messages have the same nonce, then the leader MUST abort with
+   error "unrecognizedMessage".
 
    Next, for each Transition, the leader proceeds as described in
    Section 4.4.2.3.  If any state transition results in INVALID, this
@@ -1266,7 +1268,7 @@ struct {
    which the corresponding state is FAILED and proceeds as described in
    the next section.
 
-4.4.4.2.  Aggregate Request
+4.4.4.2.  Aggregate Continuation Request
 
    An AggregateContinueReq is sent from the leader to the helper to
    advance the preparation state of each report being aggregated.  This
@@ -1285,26 +1287,24 @@ struct {
    type agg_cont_req with payload AggregateContinueReq.
 
    After verifying the authentication tag as described in Section 4.4.4,
-   the helper processes the AggregateContinueReq as follows.  It first
-   scans AggregateContinueReq.seq to check for any reports that may have
-   been dropped by the leader in the previous step.
+   the helper beings by scanning AggregateContinueReq.seq to check for
+   any reports that may have been dropped by the leader in the previous
+   step.
 
    Next, the helper processes the Transition messages from the leader.
-   If any leader Transition contains an unrecognized nonce, the Helper
-   sends a Transition with tran_type = failed and TransitionError =
-   unrecognized-nonce.  [CP: It may be better to go to abort rather than
-   just fail, since this s tentamount to sending a malformed aggregate
-   request.]  If any Transition appears out-of-order, the helper MUST
-   abort with error "unrecognizedMessage".
+   If any message appears out of order or has an unrecognized nonce, or
+   if any two messages have the same nonce, then the helper MUST abort
+   with error "unrecognizedMessage".
 
-   Next, it constructs a transition as described in Section 4.4.2.4.  If
-   any state transition results in INVALID, the helper MUST abort with
-   error "unrecognizedMessage".
+   Next, the helper processes each Transition as described in
+   Section 4.4.2.4.  If any state transition results in INVALID, the
+   helper MUST abort with error "unrecognizedMessage".
 
    Next, the helper constructs an AggregateResp containing its next
    flight of Transition messages and it updated state.  The messages
    MUST appear in the same order as AggregateContinueReq.seq.  The
    helper's response is an HTTP 200 OK whose body is the AggregateResp.
+   The leader processes this message as described in Section 4.4.4.1.
 
 4.4.4.3.  Aggregate Share Request
 
