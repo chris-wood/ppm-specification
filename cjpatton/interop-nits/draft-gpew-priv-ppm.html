@@ -2574,22 +2574,20 @@ struct {
 } AggregateReq;
 </pre><a href="#section-4.4.4-2" class="pilcrow">¶</a>
 </div>
-<p id="section-4.4.4-3">[CP: Since these parameters are required for all variants, I think we should
-consider moving task_id and job_id to precede the message type.]<a href="#section-4.4.4-3" class="pilcrow">¶</a></p>
-<p id="section-4.4.4-4">As discussed in <a href="#aggregation-flow" class="xref">Section 4.4</a>, the leader may choose to shard the task of
+<p id="section-4.4.4-3">As discussed in <a href="#aggregation-flow" class="xref">Section 4.4</a>, the leader may choose to shard the task of
 aggregating a large number of reports into any number of sub-batches. The
 process of aggregating the reports in a leader-defined sub-batch is called an
 <em>aggregation job</em>. An <code>AggregationJobID</code> is a globally unique sequence of bytes
 chosen by the leader to identify an aggregation job. It is <span class="bcp14">RECOMMENDED</span> that this
 be set to a random string output by a cryptographically secure pseudorandom
 number generator. The aggregation job ID is used by aggregators to look up
-preparation state for the reports included in the sub-batch.<a href="#section-4.4.4-4" class="pilcrow">¶</a></p>
-<p id="section-4.4.4-5">The last 32 bytes of each message is an HMAC-SHA256 tag computed over the
+preparation state for the reports included in the sub-batch.<a href="#section-4.4.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.4.4-4">The last 32 bytes of each message is an HMAC-SHA256 tag computed over the
 serialized message excluding the <code>tag</code> field itself. The key that is used is the
-<code>agg_auth_key</code> shared by the aggregators and configured for the given task.<a href="#section-4.4.4-5" class="pilcrow">¶</a></p>
-<p id="section-4.4.4-6">Upon receiving an <code>AggregateReq</code> message, an aggregator <span class="bcp14">MUST</span> verify the tag before
+<code>agg_auth_key</code> shared by the aggregators and configured for the given task.<a href="#section-4.4.4-4" class="pilcrow">¶</a></p>
+<p id="section-4.4.4-5">Upon receiving an <code>AggregateReq</code> message, an aggregator <span class="bcp14">MUST</span> verify the tag before
 interpreting the message's contents. If verification fails, it <span class="bcp14">MUST</span> abort and
-alert its peer with error "invalidHmac".<a href="#section-4.4.4-6" class="pilcrow">¶</a></p>
+alert its peer with error "invalidHmac".<a href="#section-4.4.4-5" class="pilcrow">¶</a></p>
 <div id="aggregate-init-request">
 <section id="section-4.4.4.1">
             <h5 id="name-aggregate-initialization-re">

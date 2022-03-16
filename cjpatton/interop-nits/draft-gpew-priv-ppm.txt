@@ -1173,10 +1173,6 @@ struct {
        opaque tag[32];
    } AggregateReq;
 
-   [CP: Since these parameters are required for all variants, I think we
-   should consider moving task_id and job_id to precede the message
-   type.]
-
    As discussed in Section 4.4, the leader may choose to shard the task
    of aggregating a large number of reports into any number of sub-
    batches.  The process of aggregating the reports in a leader-defined
