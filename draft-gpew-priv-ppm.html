@@ -1022,11 +1022,11 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Privacy Preserving Measurement</td>
-<td class="right">March 2022</td>
+<td class="right">April 2022</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Geoghegan, et al.</td>
-<td class="center">Expires 17 September 2022</td>
+<td class="center">Expires 3 October 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1039,12 +1039,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-gpew-priv-ppm-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-03-16" class="published">16 March 2022</time>
+<time datetime="2022-04-01" class="published">1 April 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-09-17">17 September 2022</time></dd>
+<dd class="expires"><time datetime="2022-10-03">3 October 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1108,7 +1108,7 @@ be used to collect aggregate data without revealing any individual user's data.<
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 17 September 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 3 October 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1747,8 +1747,9 @@ than those defined above. Servers <span class="bcp14">MUST NOT</span> use the PP
 not listed in the appropriate IANA registry (see <a href="#ppm-urn-space" class="xref">Section 7.3</a>). Clients
 <span class="bcp14">SHOULD</span> display the "detail" field of all errors. The "instance" value <span class="bcp14">MUST</span> be
 the endpoint to which the request was targeted. The problem document <span class="bcp14">MUST</span> also
-include a "taskid" member which contains the associated PPM task ID (this value
-is always known, see <a href="#task-configuration" class="xref">Section 4.1</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+include a "taskid" member which contains the associated PPM task ID, encoded
+with base64 using the standard alphabet <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always
+known, see <a href="#task-configuration" class="xref">Section 4.1</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 <p id="section-3.1-5">In the remainder of this document, we use the tokens in the table above to refer
 to error types, rather than the full URNs. For example, an "error of type
 'unrecognizedMessage'" refers to an error document with "type" value
@@ -4110,6 +4111,10 @@ specification.<a href="#section-7.3-3" class="pilcrow">¶</a></p>
 <dt id="RFC3553">[RFC3553]</dt>
         <dd>
 <span class="refAuthor">Mealling, M.</span>, <span class="refAuthor">Masinter, L.</span>, <span class="refAuthor">Hardie, T.</span>, and <span class="refAuthor">G. Klyne</span>, <span class="refTitle">"An IETF URN Sub-namespace for Registered Protocol Parameters"</span>, <span class="seriesInfo">BCP 73</span>, <span class="seriesInfo">RFC 3553</span>, <span class="seriesInfo">DOI 10.17487/RFC3553</span>, <time datetime="2003-06" class="refDate">June 2003</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3553">https://www.rfc-editor.org/rfc/rfc3553</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4648">[RFC4648]</dt>
+        <dd>
+<span class="refAuthor">Josefsson, S.</span>, <span class="refTitle">"The Base16, Base32, and Base64 Data Encodings"</span>, <span class="seriesInfo">RFC 4648</span>, <span class="seriesInfo">DOI 10.17487/RFC4648</span>, <time datetime="2006-10" class="refDate">October 2006</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4648">https://www.rfc-editor.org/rfc/rfc4648</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC5861">[RFC5861]</dt>
         <dd>
