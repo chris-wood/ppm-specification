@@ -605,7 +605,7 @@ struct {
    [aggregator]/hpke_config?task_id=[task-id], where [aggregator] is the
    aggregator's endpoint URL, obtained from the task parameters, and
    [task-id] is the task ID obtained from the task parameters, encoded
-   in Base 64 with URl and filename safe alphabet with no padding, as
+   in Base 64 with URL and filename safe alphabet with no padding, as
    specified in sections 5 and 3.2 of [RFC4648].  If the aggregator does
    not recognize the task ID, then it responds with HTTP error status
    404 Not Found and an error of type unrecognizedTask.  The aggregator

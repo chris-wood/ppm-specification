@@ -1943,7 +1943,7 @@ key of each of the aggregators. These are retrieved from each aggregator by
 sending a request to <code>[aggregator]/hpke_config?task_id=[task-id]</code>, where
 <code>[aggregator]</code> is the aggregator's endpoint URL, obtained from the task
 parameters, and <code>[task-id]</code> is the task ID obtained from the task parameters,
-encoded in Base 64 with URl and filename safe alphabet with no padding, as
+encoded in Base 64 with URL and filename safe alphabet with no padding, as
 specified in sections 5 and 3.2 of <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span>. If the aggregator does not
 recognize the task ID, then it responds with HTTP error status 404 Not Found and
 an error of type <code>unrecognizedTask</code>. The aggregator responds to well-formed
