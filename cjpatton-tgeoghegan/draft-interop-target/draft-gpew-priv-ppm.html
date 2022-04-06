@@ -1026,7 +1026,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Geoghegan, et al.</td>
-<td class="center">Expires 3 October 2022</td>
+<td class="center">Expires 8 October 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1039,12 +1039,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-gpew-priv-ppm-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-04-01" class="published">1 April 2022</time>
+<time datetime="2022-04-06" class="published">6 April 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-10-03">3 October 2022</time></dd>
+<dd class="expires"><time datetime="2022-10-08">8 October 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1108,7 +1108,7 @@ be used to collect aggregate data without revealing any individual user's data.<
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 3 October 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 8 October 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1772,8 +1772,9 @@ not listed in the appropriate IANA registry (see <a href="#ppm-urn-space" class=
 <span class="bcp14">SHOULD</span> display the "detail" field of all errors. The "instance" value <span class="bcp14">MUST</span> be
 the endpoint to which the request was targeted. The problem document <span class="bcp14">MUST</span> also
 include a "taskid" member which contains the associated PPM task ID, encoded
-with base64 using the standard alphabet <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always
-known, see <a href="#task-configuration" class="xref">Section 4.2</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+in Base 64 using the URL and filename safe alphabet with no padding as defined
+in sections 5 and 3.2 of <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always known, see
+<a href="#task-configuration" class="xref">Section 4.2</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 <p id="section-3.1-5">In the remainder of this document, we use the tokens in the table above to refer
 to error types, rather than the full URNs. For example, an "error of type
 'unrecognizedMessage'" refers to an error document with "type" value
@@ -1881,7 +1882,8 @@ with which all of the parties are configured:<a href="#section-4.2-3" class="pil
 endpoints can be found. Each endpoint's list <span class="bcp14">MUST</span> be in the same order. The
 leader's endpoint <span class="bcp14">MUST</span> be the first in the list. The order of the
 <code>encrypted_input_shares</code> in a <code>Report</code> (see <a href="#uploading-reports" class="xref">Section 4.3</a>) <span class="bcp14">MUST</span> be the
-same as the order in which aggregators appear in this list.<a href="#section-4.2-4.1" class="pilcrow">¶</a>
+same as the order in which aggregators appear in this list. Aggregators <span class="bcp14">MAY</span>
+use the same endpoint for multiple tasks.<a href="#section-4.2-4.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-4.2-4.2">
             <code>max_batch_lifetime</code>: The maximum number of times a batch of reports may be
@@ -1938,10 +1940,17 @@ individual shares to each helper.<a href="#section-4.3-1" class="pilcrow">¶</a>
           </h4>
 <p id="section-4.3.1-1">Before the client can upload its report to the leader, it must know the public
 key of each of the aggregators. These are retrieved from each aggregator by
-sending a request to <code>[aggregator]/hpke_config</code>, where <code>[aggregator]</code> is the
-aggregator's endpoint URL, obtained from the task parameters. The aggregator
-responds to well-formed requests with status 200 and an <code>HpkeConfig</code> value:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.3.1-2">
+sending a request to <code>[aggregator]/hpke_config?task_id=[task-id]</code>, where
+<code>[aggregator]</code> is the aggregator's endpoint URL, obtained from the task
+parameters, and <code>[task-id]</code> is the task ID obtained from the task parameters,
+encoded in Base 64 with URL and filename safe alphabet with no padding, as
+specified in sections 5 and 3.2 of <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span>. If the aggregator does not
+recognize the task ID, then it responds with HTTP error status 404 Not Found and
+an error of type <code>unrecognizedTask</code>. The aggregator responds to well-formed
+requests with status 200 and an <code>HpkeConfig</code> value:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.3.1-2">[TODO: Allow aggregators to return HTTP 403 Forbidden in deployments that use
+authentication to avoid leaking information about which tasks exist.]<a href="#section-4.3.1-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.3.1-3">
 <pre>
 struct {
   HpkeConfigId id;
@@ -1955,36 +1964,36 @@ opaque HpkePublicKey&lt;1..2^16-1&gt;;
 uint16 HpkeAeadId; // Defined in I-D.irtf-cfrg-hpke
 uint16 HpkeKemId;  // Defined in I-D.irtf-cfrg-hpke
 uint16 HpkeKdfId;  // Defined in I-D.irtf-cfrg-hpke
-</pre><a href="#section-4.3.1-2" class="pilcrow">¶</a>
+</pre><a href="#section-4.3.1-3" class="pilcrow">¶</a>
 </div>
-<p id="section-4.3.1-3">[OPEN ISSUE: Decide whether to expand the width of the id, or support multiple
-cipher suites (a la OHTTP/ECH).]<a href="#section-4.3.1-3" class="pilcrow">¶</a></p>
-<p id="section-4.3.1-4">The client <span class="bcp14">MUST</span> abort if any of the following happen for any HPKE-config
-request:<a href="#section-4.3.1-4" class="pilcrow">¶</a></p>
+<p id="section-4.3.1-4">[OPEN ISSUE: Decide whether to expand the width of the id, or support multiple
+cipher suites (a la OHTTP/ECH).]<a href="#section-4.3.1-4" class="pilcrow">¶</a></p>
+<p id="section-4.3.1-5">The client <span class="bcp14">MUST</span> abort if any of the following happen for any HPKE-config
+request:<a href="#section-4.3.1-5" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-4.3.1-5.1">the client and aggregator failed to establish a secure,
-aggregator-authenticated channel;<a href="#section-4.3.1-5.1" class="pilcrow">¶</a>
+<li class="normal" id="section-4.3.1-6.1">the client and aggregator failed to establish a secure,
+aggregator-authenticated channel;<a href="#section-4.3.1-6.1" class="pilcrow">¶</a>
 </li>
-            <li class="normal" id="section-4.3.1-5.2">the GET request failed or didn't return a valid key config; or<a href="#section-4.3.1-5.2" class="pilcrow">¶</a>
+            <li class="normal" id="section-4.3.1-6.2">the GET request failed or didn't return a valid key config; or<a href="#section-4.3.1-6.2" class="pilcrow">¶</a>
 </li>
-            <li class="normal" id="section-4.3.1-5.3">the key config specifies a KEM, KDF, or AEAD algorithm the client doesn't
-recognize.<a href="#section-4.3.1-5.3" class="pilcrow">¶</a>
+            <li class="normal" id="section-4.3.1-6.3">the key config specifies a KEM, KDF, or AEAD algorithm the client doesn't
+recognize.<a href="#section-4.3.1-6.3" class="pilcrow">¶</a>
 </li>
           </ul>
-<p id="section-4.3.1-6">Aggregators <span class="bcp14">SHOULD</span> use HTTP caching to permit client-side caching of this
+<p id="section-4.3.1-7">Aggregators <span class="bcp14">SHOULD</span> use HTTP caching to permit client-side caching of this
 resource <span>[<a href="#RFC5861" class="xref">RFC5861</a>]</span>. Aggregators <span class="bcp14">SHOULD</span> favor long cache lifetimes to avoid
 frequent cache revalidation, e.g., on the order of days. Aggregators can control
-this cached lifetime with the Cache-Control header, as follows:<a href="#section-4.3.1-6" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.3.1-7">
+this cached lifetime with the Cache-Control header, as follows:<a href="#section-4.3.1-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.3.1-8">
 <pre>
   Cache-Control: max-age=86400
-</pre><a href="#section-4.3.1-7" class="pilcrow">¶</a>
+</pre><a href="#section-4.3.1-8" class="pilcrow">¶</a>
 </div>
-<p id="section-4.3.1-8">Clients <span class="bcp14">SHOULD</span> follow the usual HTTP caching <span>[<a href="#RFC7234" class="xref">RFC7234</a>]</span> semantics for key
-configurations.<a href="#section-4.3.1-8" class="pilcrow">¶</a></p>
-<p id="section-4.3.1-9">Note: Long cache lifetimes may result in clients using stale HPKE keys;
+<p id="section-4.3.1-9">Clients <span class="bcp14">SHOULD</span> follow the usual HTTP caching <span>[<a href="#RFC7234" class="xref">RFC7234</a>]</span> semantics for key
+configurations.<a href="#section-4.3.1-9" class="pilcrow">¶</a></p>
+<p id="section-4.3.1-10">Note: Long cache lifetimes may result in clients using stale HPKE keys;
 aggregators <span class="bcp14">SHOULD</span> continue to accept reports with old keys for at least twice
-the cache lifetime in order to avoid rejecting reports.<a href="#section-4.3.1-9" class="pilcrow">¶</a></p>
+the cache lifetime in order to avoid rejecting reports.<a href="#section-4.3.1-10" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="upload-request">
