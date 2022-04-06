@@ -5,12 +5,12 @@
 Network Working Group                                       T. Geoghegan
 Internet-Draft                                                      ISRG
 Intended status: Standards Track                               C. Patton
-Expires: 6 October 2022                                       Cloudflare
+Expires: 8 October 2022                                       Cloudflare
                                                              E. Rescorla
                                                                  Mozilla
                                                               C. A. Wood
                                                               Cloudflare
-                                                            4 April 2022
+                                                            6 April 2022
 
 
                      Privacy Preserving Measurement
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 October 2022.
+   This Internet-Draft will expire on 8 October 2022.
 
 Copyright Notice
 
@@ -455,9 +455,10 @@ Table of Contents
    Section 7.3).  Clients SHOULD display the "detail" field of all
    errors.  The "instance" value MUST be the endpoint to which the
    request was targeted.  The problem document MUST also include a
-   "taskid" member which contains the associated PPM task ID, encoded
-   with base64 using the standard alphabet [RFC4648] (this value is
-   always known, see Section 4.2).
+   "taskid" member which contains the associated PPM task ID, encoded in
+   Base 64 using the URL and filename safe alphabet with no padding as
+   defined in sections 5 and 3.2 of [RFC4648] (this value is always
+   known, see Section 4.2).
 
    In the remainder of this document, we use the tokens in the table
    above to refer to error types, rather than the full URNs.  For
@@ -604,9 +605,10 @@ struct {
    [aggregator]/hpke_config?task_id=[task-id], where [aggregator] is the
    aggregator's endpoint URL, obtained from the task parameters, and
    [task-id] is the task ID obtained from the task parameters, encoded
-   in Base16 as specified in [RFC4648].  If the aggregator does not
-   recognize the task ID, then it responds with HTTP error status 404
-   Not Found and an error of type unrecognizedTask.  The aggregator
+   in Base 64 with URl and filename safe alphabet with no padding, as
+   specified in sections 5 and 3.2 of [RFC4648].  If the aggregator does
+   not recognize the task ID, then it responds with HTTP error status
+   404 Not Found and an error of type unrecognizedTask.  The aggregator
    responds to well-formed requests with status 200 and an HpkeConfig
    value:
 

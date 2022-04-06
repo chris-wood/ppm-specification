@@ -1026,7 +1026,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Geoghegan, et al.</td>
-<td class="center">Expires 6 October 2022</td>
+<td class="center">Expires 8 October 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1039,12 +1039,12 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dd class="internet-draft">draft-gpew-priv-ppm-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-04-04" class="published">4 April 2022</time>
+<time datetime="2022-04-06" class="published">6 April 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-10-06">6 October 2022</time></dd>
+<dd class="expires"><time datetime="2022-10-08">8 October 2022</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1108,7 +1108,7 @@ be used to collect aggregate data without revealing any individual user's data.<
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 6 October 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 8 October 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1772,8 +1772,9 @@ not listed in the appropriate IANA registry (see <a href="#ppm-urn-space" class=
 <span class="bcp14">SHOULD</span> display the "detail" field of all errors. The "instance" value <span class="bcp14">MUST</span> be
 the endpoint to which the request was targeted. The problem document <span class="bcp14">MUST</span> also
 include a "taskid" member which contains the associated PPM task ID, encoded
-with base64 using the standard alphabet <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always
-known, see <a href="#task-configuration" class="xref">Section 4.2</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+in Base 64 using the URL and filename safe alphabet with no padding as defined
+in sections 5 and 3.2 of <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always known, see
+<a href="#task-configuration" class="xref">Section 4.2</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 <p id="section-3.1-5">In the remainder of this document, we use the tokens in the table above to refer
 to error types, rather than the full URNs. For example, an "error of type
 'unrecognizedMessage'" refers to an error document with "type" value
@@ -1942,7 +1943,8 @@ key of each of the aggregators. These are retrieved from each aggregator by
 sending a request to <code>[aggregator]/hpke_config?task_id=[task-id]</code>, where
 <code>[aggregator]</code> is the aggregator's endpoint URL, obtained from the task
 parameters, and <code>[task-id]</code> is the task ID obtained from the task parameters,
-encoded in Base16 as specified in <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span>. If the aggregator does not
+encoded in Base 64 with URl and filename safe alphabet with no padding, as
+specified in sections 5 and 3.2 of <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span>. If the aggregator does not
 recognize the task ID, then it responds with HTTP error status 404 Not Found and
 an error of type <code>unrecognizedTask</code>. The aggregator responds to well-formed
 requests with status 200 and an <code>HpkeConfig</code> value:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
