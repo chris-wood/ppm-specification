@@ -92,6 +92,7 @@ Table of Contents
        4.3.2.  Preparing a Report Share for Aggregation
        4.3.3.  Aggregating Output Shares
        4.3.4.  Aggregate Messages
+       4.3.5.  Aggregate Share Request
      4.4.  Collecting Results
        4.4.1.  Validating Batch Parameters
        4.4.2.  Anti-replay
@@ -766,7 +767,7 @@ struct {
    batches of 10.  Each sub-batch takes two round-trips to process.
    Once both sub-batches have been processed, the leader can issue an
    AggregateShareReq in order to retrieve the helper's aggregate share.
-   (see Section 4.3.4.3.)
+   (see Section 4.3.5.)
 
    In order to allow the helpers to retain minimal state, the helper can
    attach a state parameter to its response, with the leader returning
@@ -898,7 +899,7 @@ struct {
    the leader and has completed a collect request for a batch containing
    the report (see Section 4.4), or if the aggregator is a helper and
    has completed an aggregate-share request for a batch containing the
-   report (see Section 4.3.4.3).  It also checks if the report has been
+   report (see Section 4.3.5).  It also checks if the report has been
    aggregated.  This is the case if the report was used in a previous
    aggregate request (see Section 4.3.4.1 and Section 4.3.4.2).
 
@@ -1279,7 +1280,7 @@ struct {
    helper's response is an HTTP 200 OK whose body is the AggregateResp.
    The leader processes this message as described in Section 4.3.4.1.
 
-4.3.4.3.  Aggregate Share Request
+4.3.5.  Aggregate Share Request
 
    Once the aggregators have verified at least as many reports as
    required for the PPM task, the leader sends to each helper a POST
@@ -1292,9 +1293,6 @@ struct {
      opaque checksum[32];
      opaque helper_state<0..2^16>;
    } AggregateShareReq;
-
-   [OPEN ISSUE: consider updating the checksum algorithm to not permit
-   collisions]
 
    *  task_id is the task ID associated with the PPM parameters.
 
@@ -1416,7 +1414,7 @@ struct {
    Once all the necessary reports have been prepared, the leader obtains
    the helper's encrypted aggregate share for the batch interval by
    sending an AggregateShareReq to the helper as described in
-   Section 4.3.4.3.  The leader then computes its own aggregate share
+   Section 4.3.5.  The leader then computes its own aggregate share
    agg_share by aggregating all of the prepared output shares that fall
    within the batch interval.  Finally, it encrypts it under the
    collector's HPKE public key as follows:
@@ -2045,10 +2043,9 @@ struct {
 
    *  AggregateResp Section 4.3.4.2: "message/ppm-aggregate-resp"
 
-   *  AggregateShareReq Section 4.3.4.3: "message/ppm-aggregate-share-
-      req"
+   *  AggregateShareReq Section 4.3.5: "message/ppm-aggregate-share-req"
 
-   *  AggregateShareResp Section 4.3.4.3: "message/ppm-aggregate-share-
+   *  AggregateShareResp Section 4.3.5: "message/ppm-aggregate-share-
       resp"
 
    *  CollectReq Section 4.4: "message/ppm-collect-req"
@@ -2243,7 +2240,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.3.4.3
+   Security considerations:  see Section 4.3.5
 
    Interoperability considerations:  N/A
 
@@ -2284,7 +2281,7 @@ struct {
 
    Encoding considerations:  only "8bit" or "binary" is permitted
 
-   Security considerations:  see Section 4.3.4.3
+   Security considerations:  see Section 4.3.5
 
    Interoperability considerations:  N/A
 
