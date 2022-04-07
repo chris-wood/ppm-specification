@@ -1135,8 +1135,6 @@ struct {
    The following messages are defined in this section and are used to
    aggregate a number of reports simultaneously:
 
-   opaque AggregationJobID[32];
-
    enum {
      agg_init_req(0),
      agg_cont_req(1),
