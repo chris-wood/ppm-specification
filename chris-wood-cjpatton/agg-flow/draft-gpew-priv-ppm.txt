@@ -455,10 +455,9 @@ Table of Contents
    Section 7.3).  Clients SHOULD display the "detail" field of all
    errors.  The "instance" value MUST be the endpoint to which the
    request was targeted.  The problem document MUST also include a
-   "taskid" member which contains the associated PPM task ID, encoded in
-   Base 64 using the URL and filename safe alphabet with no padding as
-   defined in sections 5 and 3.2 of [RFC4648] (this value is always
-   known, see Section 4.2).
+   "taskid" member which contains the associated PPM task ID, encoded
+   with base64 using the standard alphabet [RFC4648] (this value is
+   always known, see Section 4.2).
 
    In the remainder of this document, we use the tokens in the table
    above to refer to error types, rather than the full URNs.  For
@@ -696,13 +695,13 @@ struct {
    encrypt an input share, the client first generates an HPKE
    [I-D.irtf-cfrg-hpke] context for the aggregator by running
 
- enc, context = SetupBaseS(pk, Report.task_id ||
-                               "ppm input share" || 0x01 || server_role)
+ enc, context = SetupBaseS(pk, Report.task_id || "ppm-00 input share" ||
+                               0x01 || server_role)
 
    [OPEN ISSUE: Is 0x01 ambiguous?]
 
-   where pk is the aggregator's public key and and server_role is the
-   Role of the intended recipient (0x02 for the leader and 0x03 for the
+   where pk is the aggregator's public key and server_role is the Role
+   of the intended recipient (0x02 for the leader and 0x03 for the
    helper).  In general, the info string for computing the HPKE context
    is suffixed by two bytes, the first of which identifies the role of
    the sender and the second of which identifies the role of the
@@ -715,7 +714,7 @@ struct {
 
    where input_share is the aggregator's input share and nonce and
    extensions are the corresponding fields of Report.  Clients MUST NOT
-   use the same enc for multitple reports.
+   use the same enc for multiple reports.
 
    The leader responds to well-formed requests to [leader]/upload with
    status 200 and an empty body.  Malformed requests are handled as
@@ -723,12 +722,13 @@ struct {
    measurement value in more than one report if the leader responds with
    status 200 and an empty body.
 
-   The leader responds to requests with out-of-date HpkeConfig.id
-   values, indicated by HpkeCiphertext.config_id, with status 400 and an
-   error of type 'outdatedConfig'.  Clients SHOULD invalidate any cached
-   aggregator HpkeConfig and retry with a freshly generated Report.  If
-   this retried report does not succeed, clients MUST abort and
-   discontinue retrying.
+   The leader responds to requests whose leader encrypted input share
+   uses an out-of-date HpkeConfig.id value, indicated by
+   HpkeCiphertext.config_id, with status 400 and an error of type
+   'outdatedConfig'.  Clients SHOULD invalidate any cached aggregator
+   HpkeConfig and retry with a freshly generated Report.  If this
+   retried report does not succeed, clients MUST abort and discontinue
+   retrying.
 
    As discussed in Section 4.4.2.2, the leader ignores any report whose
    nonce contains a timestamp that falls in a batch interval for which
@@ -958,8 +958,8 @@ struct {
    with error hpke-unknown-config-id.  Otherwise, it decrypts the
    payload with the following procedure:
 
- context = SetupBaseR(encrypted_input_share.enc, sk,
-                    task_id || "ppm input share" || 0x01 || server_role)
+ context = SetupBaseR(encrypted_input_share.enc, sk, task_id ||
+                      "ppm-00 input share" || 0x01 || server_role)
 
  input_share = context.Open(ReportShare.nonce || ReportShare.extensions,
                             ReportShare.encrypted_input_share.payload)
@@ -1365,11 +1365,11 @@ struct {
    whose structure is specific to the VDAF in use.  The helper encrypts
    the agg_share as follows:
 
-   enc, context = SetupBaseS(pk, AggregateShareReq.task_id ||
-                                 "ppm aggregate share" || 0x03 || 0x00)
+ enc, context = SetupBaseS(pk, AggregateShareReq.task_id ||
+                               "ppm-00 aggregate share" || 0x03 || 0x00)
 
-   encrypted_agg_share = context.Seal(AggregateShareReq.batch_interval,
-                                      agg_share)
+ encrypted_agg_share = context.Seal(AggregateShareReq.batch_interval,
+                                    agg_share)
 
    where pk is the HPKE public key encoded by the collector's HPKE key.
 
@@ -1462,19 +1462,27 @@ struct {
    Once all the necessary reports have been prepared, the leader obtains
    the helper's encrypted aggregate share for the batch interval by
    sending an AggregateShareReq to the helper as described in
-   Section 4.4.4.3.  The leader then computes its own aggregate share by
-   aggregating all of the prepared output shares that fall within the
-   batch interval.
+   Section 4.4.4.3.  The leader then computes its own aggregate share
+   agg_share by aggregating all of the prepared output shares that fall
+   within the batch interval.  Finally, it encrypts it under the
+   collector's HPKE public key as follows:
+
+ enc, context = SetupBaseS(pk, CollectReq.task_id ||
+                               "ppm-00 aggregate share" || 0x02 || 0x00)
+ encrypted_agg_share = context.Seal(CollectReq.batch_interval,
+                                    agg_share)
+
+   where pk is the collector's public key.
 
    Next, the leader retrieves its own aggregate share agg_share for the
    batch interval as described in Section 4.4.3.  Finally, it encrypts
    it under the collector's HPKE public key as follows:
 
-   enc, context = SetupBaseS(pk, CollectReq.task_id ||
-                                 "ppm aggregate share" || 0x02 || 0x00)
+ enc, context = SetupBaseS(pk, CollectReq.task_id ||
+                               "ppm-00 aggregate share" || 0x02 || 0x00)
 
-   encrypted_agg_share = context.Seal(CollectReq.batch_interval,
-                                      agg_share)
+ encrypted_agg_share = context.Seal(CollectReq.batch_interval,
+                                    agg_share)
 
    where pk is the collector's public key.
 

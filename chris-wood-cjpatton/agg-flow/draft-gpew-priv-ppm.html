@@ -1772,9 +1772,8 @@ not listed in the appropriate IANA registry (see <a href="#ppm-urn-space" class=
 <span class="bcp14">SHOULD</span> display the "detail" field of all errors. The "instance" value <span class="bcp14">MUST</span> be
 the endpoint to which the request was targeted. The problem document <span class="bcp14">MUST</span> also
 include a "taskid" member which contains the associated PPM task ID, encoded
-in Base 64 using the URL and filename safe alphabet with no padding as defined
-in sections 5 and 3.2 of <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always known, see
-<a href="#task-configuration" class="xref">Section 4.2</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+with base64 using the standard alphabet <span>[<a href="#RFC4648" class="xref">RFC4648</a>]</span> (this value is always
+known, see <a href="#task-configuration" class="xref">Section 4.2</a>).<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 <p id="section-3.1-5">In the remainder of this document, we use the tokens in the table above to refer
 to error types, rather than the full URNs. For example, an "error of type
 'unrecognizedMessage'" refers to an error document with "type" value
@@ -2041,18 +2040,18 @@ share, the client first generates an HPKE <span>[<a href="#I-D.irtf-cfrg-hpke" c
 the aggregator by running<a href="#section-4.3.2-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.3.2-6">
 <pre>
-enc, context = SetupBaseS(pk, Report.task_id ||
-                              "ppm input share" || 0x01 || server_role)
+enc, context = SetupBaseS(pk, Report.task_id || "ppm-00 input share" ||
+                              0x01 || server_role)
 </pre><a href="#section-4.3.2-6" class="pilcrow">¶</a>
 </div>
 <p id="section-4.3.2-7">[OPEN ISSUE: Is <code>0x01</code> ambiguous?]<a href="#section-4.3.2-7" class="pilcrow">¶</a></p>
-<p id="section-4.3.2-8">where <code>pk</code> is the aggregator's public key and and <code>server_role</code> is the Role of
-the intended recipient (<code>0x02</code> for the leader and <code>0x03</code> for the helper). In
+<p id="section-4.3.2-8">where <code>pk</code> is the aggregator's public key and <code>server_role</code> is the Role of the
+intended recipient (<code>0x02</code> for the leader and <code>0x03</code> for the helper). In
 general, the info string for computing the HPKE context is suffixed by two
 bytes, the first of which identifies the role of the sender and the second of
 which identifies the role of the intended recipient.<a href="#section-4.3.2-8" class="pilcrow">¶</a></p>
-<p id="section-4.3.2-9"><code>enc</code> is the HPKE encapsulated key and <code>context</code> is the HPKE
-context used by the client for encryption. The payload is encrypted as<a href="#section-4.3.2-9" class="pilcrow">¶</a></p>
+<p id="section-4.3.2-9"><code>enc</code> is the HPKE encapsulated key and <code>context</code> is the HPKE context used by the
+client for encryption. The payload is encrypted as<a href="#section-4.3.2-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.3.2-10">
 <pre>
 payload = context.Seal(Report.nonce || Report.extensions, input_share)
@@ -2060,16 +2059,17 @@ payload = context.Seal(Report.nonce || Report.extensions, input_share)
 </div>
 <p id="section-4.3.2-11">where <code>input_share</code> is the aggregator's input share and <code>nonce</code> and <code>extensions</code>
 are the corresponding fields of <code>Report</code>. Clients <span class="bcp14">MUST NOT</span> use the same <code>enc</code>
-for multitple reports.<a href="#section-4.3.2-11" class="pilcrow">¶</a></p>
+for multiple reports.<a href="#section-4.3.2-11" class="pilcrow">¶</a></p>
 <p id="section-4.3.2-12">The leader responds to well-formed requests to <code>[leader]/upload</code> with status 200
 and an empty body. Malformed requests are handled as described in <a href="#errors" class="xref">Section 3.1</a>.
 Clients <span class="bcp14">SHOULD NOT</span> upload the same measurement value in more than one report if
 the leader responds with status 200 and an empty body.<a href="#section-4.3.2-12" class="pilcrow">¶</a></p>
-<p id="section-4.3.2-13">The leader responds to requests with out-of-date <code>HpkeConfig.id</code> values,
-indicated by <code>HpkeCiphertext.config_id</code>, with status 400 and an error of type
-'outdatedConfig'. Clients <span class="bcp14">SHOULD</span> invalidate any cached aggregator <code>HpkeConfig</code>
-and retry with a freshly generated Report. If this retried report does not
-succeed, clients <span class="bcp14">MUST</span> abort and discontinue retrying.<a href="#section-4.3.2-13" class="pilcrow">¶</a></p>
+<p id="section-4.3.2-13">The leader responds to requests whose leader encrypted input share uses an
+out-of-date <code>HpkeConfig.id</code> value, indicated by <code>HpkeCiphertext.config_id</code>, with
+status 400 and an error of type 'outdatedConfig'. Clients <span class="bcp14">SHOULD</span> invalidate any
+cached aggregator <code>HpkeConfig</code> and retry with a freshly generated Report. If
+this retried report does not succeed, clients <span class="bcp14">MUST</span> abort and discontinue
+retrying.<a href="#section-4.3.2-13" class="pilcrow">¶</a></p>
 <p id="section-4.3.2-14">As discussed in <a href="#prep-start" class="xref">Section 4.4.2.2</a>, the leader ignores any report whose nonce
 contains a timestamp that falls in a batch interval for which it has received a
 collect request from the collector. (Collect requests are defined in
@@ -2329,8 +2329,8 @@ up the HPKE config and corresponding secret key indicated by
 procedure:<a href="#section-4.4.2.2-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.4.2.2-6">
 <pre>
-context = SetupBaseR(encrypted_input_share.enc, sk,
-                   task_id || "ppm input share" || 0x01 || server_role)
+context = SetupBaseR(encrypted_input_share.enc, sk, task_id ||
+                     "ppm-00 input share" || 0x01 || server_role)
 
 input_share = context.Open(ReportShare.nonce || ReportShare.extensions,
                            ReportShare.encrypted_input_share.payload)
@@ -2762,7 +2762,7 @@ structure is specific to the VDAF in use. The helper encrypts the
 <div class="alignLeft art-text artwork" id="section-4.4.4.3-8">
 <pre>
 enc, context = SetupBaseS(pk, AggregateShareReq.task_id ||
-                              "ppm aggregate share" || 0x03 || 0x00)
+                              "ppm-00 aggregate share" || 0x03 || 0x00)
 
 encrypted_agg_share = context.Seal(AggregateShareReq.batch_interval,
                                    agg_share)
@@ -2859,44 +2859,54 @@ header field to suggest a pulling interval to the collector.<a href="#section-4.
 <p id="section-4.5-12">Once all the necessary reports have been prepared, the leader obtains the
 helper's encrypted aggregate share for the batch interval by sending an
 <code>AggregateShareReq</code> to the helper as described in <a href="#aggregate-share-request" class="xref">Section 4.4.4.3</a>.
-The leader then computes its own aggregate share by aggregating all of the
-prepared output shares that fall within the batch interval.<a href="#section-4.5-12" class="pilcrow">¶</a></p>
-<p id="section-4.5-13">Next, the leader retrieves its own aggregate share <code>agg_share</code> for the batch
-interval as described in <a href="#out-to-agg-share" class="xref">Section 4.4.3</a>. Finally, it encrypts it under the
-collector's HPKE public key as follows:<a href="#section-4.5-13" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.5-14">
+The leader then computes its own aggregate share <code>agg_share</code> by aggregating all
+of the prepared output shares that fall within the batch interval. Finally, it
+encrypts it under the collector's HPKE public key as follows:<a href="#section-4.5-12" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.5-13">
 <pre>
 enc, context = SetupBaseS(pk, CollectReq.task_id ||
-                              "ppm aggregate share" || 0x02 || 0x00)
+                              "ppm-00 aggregate share" || 0x02 || 0x00)
+encrypted_agg_share = context.Seal(CollectReq.batch_interval,
+                                   agg_share)
+</pre><a href="#section-4.5-13" class="pilcrow">¶</a>
+</div>
+<p id="section-4.5-14">where <code>pk</code> is the collector's public key.<a href="#section-4.5-14" class="pilcrow">¶</a></p>
+<p id="section-4.5-15">Next, the leader retrieves its own aggregate share <code>agg_share</code> for the batch
+interval as described in <a href="#out-to-agg-share" class="xref">Section 4.4.3</a>. Finally, it encrypts it under the
+collector's HPKE public key as follows:<a href="#section-4.5-15" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.5-16">
+<pre>
+enc, context = SetupBaseS(pk, CollectReq.task_id ||
+                              "ppm-00 aggregate share" || 0x02 || 0x00)
 
 encrypted_agg_share = context.Seal(CollectReq.batch_interval,
                                    agg_share)
-</pre><a href="#section-4.5-14" class="pilcrow">¶</a>
+</pre><a href="#section-4.5-16" class="pilcrow">¶</a>
 </div>
-<p id="section-4.5-15">where <code>pk</code> is the collector's public key.<a href="#section-4.5-15" class="pilcrow">¶</a></p>
-<p id="section-4.5-16">When both aggregators' shares are successfully obtained, the leader responds to
+<p id="section-4.5-17">where <code>pk</code> is the collector's public key.<a href="#section-4.5-17" class="pilcrow">¶</a></p>
+<p id="section-4.5-18">When both aggregators' shares are successfully obtained, the leader responds to
 subsequent HTTP GET requests to the collect job's URI with HTTP status 200 OK
-and a body consisting of a <code>CollectResp</code>:<a href="#section-4.5-16" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.5-17">
+and a body consisting of a <code>CollectResp</code>:<a href="#section-4.5-18" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.5-19">
 <pre>
 struct {
   HpkeCiphertext encrypted_agg_shares&lt;1..2^16-1&gt;;
 } CollectResp;
-</pre><a href="#section-4.5-17" class="pilcrow">¶</a>
+</pre><a href="#section-4.5-19" class="pilcrow">¶</a>
 </div>
-<p id="section-4.5-18">The <code>encrypted_agg_shares</code> field is the vector of encrypted aggregate shares.
+<p id="section-4.5-20">The <code>encrypted_agg_shares</code> field is the vector of encrypted aggregate shares.
 They <span class="bcp14">MUST</span> appear in the same order as the aggregator endpoints list of the task
-parameters.<a href="#section-4.5-18" class="pilcrow">¶</a></p>
-<p id="section-4.5-19">If obtaining aggregate shares fails, then the leader responds to subsequent HTTP
+parameters.<a href="#section-4.5-20" class="pilcrow">¶</a></p>
+<p id="section-4.5-21">If obtaining aggregate shares fails, then the leader responds to subsequent HTTP
 GET requests to the collect job URI with an HTTP error status and a problem
-document as described in <a href="#errors" class="xref">Section 3.1</a>.<a href="#section-4.5-19" class="pilcrow">¶</a></p>
-<p id="section-4.5-20">The leader <span class="bcp14">MUST</span> retain a collect job's results until the collector sends an HTTP
+document as described in <a href="#errors" class="xref">Section 3.1</a>.<a href="#section-4.5-21" class="pilcrow">¶</a></p>
+<p id="section-4.5-22">The leader <span class="bcp14">MUST</span> retain a collect job's results until the collector sends an HTTP
 DELETE request to the collect job URI, in which case the leader responds with
-HTTP status 204 No Content.<a href="#section-4.5-20" class="pilcrow">¶</a></p>
-<p id="section-4.5-21">[OPEN ISSUE: Allow the leader to drop aggregate shares after some reasonable
+HTTP status 204 No Content.<a href="#section-4.5-22" class="pilcrow">¶</a></p>
+<p id="section-4.5-23">[OPEN ISSUE: Allow the leader to drop aggregate shares after some reasonable
 amount of time has passed, but it's not clear how to specify that. ACME doesn't
 bother to say anything at all about this when describing how subscribers should
-fetch certificates: https://datatracker.ietf.org/doc/html/rfc8555#section-7.4.2]<a href="#section-4.5-21" class="pilcrow">¶</a></p>
+fetch certificates: https://datatracker.ietf.org/doc/html/rfc8555#section-7.4.2]<a href="#section-4.5-23" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="batch-parameter-validation">
