@@ -437,6 +437,12 @@ Table of Contents
      | outdatedConfig      | The message was generated using an      |
      |                     | outdated configuration.                 |
      +---------------------+-----------------------------------------+
+     | batchInvalid        | A collect or aggregate-share request    |
+     |                     | was made with invalid batch parameters. |
+     +---------------------+-----------------------------------------+
+     | batchMismatch       | The leader and helper do not agree on   |
+     |                     | the set of reports included in a batch. |
+     +---------------------+-----------------------------------------+
 
                                   Table 1
 
@@ -812,11 +818,6 @@ struct {
 
 4.3.2.  Preparing a Report Share for Aggregation
 
-   [CP: Todo: We permit VDAFs with 0 rounds of interaction, in
-   particular those that don't provide verifiabilty.  We'll have to do
-   something about this here and in the VDAF spec.  Maybe we just call
-   them DAFs?]
-
    In order to aggregate its report share, an aggregator must first
    decrypt the input share and then interact with the other aggregators.
    This involves executing the "preparation phase" described in
@@ -874,7 +875,7 @@ struct {
    enum {
      batch-collected(0),
      report-replayed(1),
-     report-dropped(2), // CP: Maybe not the best name
+     report-dropped(2),
      hpke-unknown-config-id(3),
      hpke-decrypt-error(4),
      vdaf-prep-error(5),
@@ -957,8 +958,8 @@ struct {
    [NOTE: This section assumes there is one one helper.  It'll have to
    be extended to allow for multiple helpers.]
 
-   [CP: We could have the leader send its first Transition in the first
-   flight along with the ReportShare, thereby saving a round trip.
+   [NOTE: We could have the leader send its first Transition in the
+   first flight along with the ReportShare, thereby saving a round trip.
    We're setting things up the way we are because we anticipate adding
    support for multiple helpers, for which multiple rounds will be
    needed anyway.]
@@ -1149,7 +1150,6 @@ struct {
            agg_init_req:  AggregateInitReq;
            agg_cont_req:  AggregateContinueReq;
        }
-       opaque tag[32];
    } AggregateReq;
 
    As discussed in Section 4.3, the leader may choose to shard the task
@@ -1167,15 +1167,6 @@ struct {
    its previous aggregate response.  (See Section 4.3.4.1 for details.)
    [OPEN ISSUE: We may want ot do away with the helper state blob.  See
    issue#185.]
-
-   The last 32 bytes of each message is an HMAC-SHA256 tag computed over
-   the serialized message excluding the tag field itself.  The key that
-   is used is the agg_auth_key shared by the aggregators and configured
-   for the given task.
-
-   Upon receiving an AggregateReq message, an aggregator MUST verify the
-   tag before interpreting the message's contents.  If verification
-   fails, it MUST abort and alert its peer with error "invalidHmac".
 
 4.3.4.1.  Aggregate Initialization Request
 
@@ -1203,22 +1194,21 @@ struct {
 
    Let [aggregator] denote the helper's API endpoint.  The leader
    extracts the sequence of report shares for [aggregator] and sends
-   sends a POST request to [aggregator]/aggregate with an Aggregate
+   sends a POST request to [aggregator]/aggregate with an AggregateReq
    message of type agg_init_req and with AggregateInitReq as the
    payload.
 
-   After verifying the authentication tag as described in Section 4.3.4,
-   the helper first checks that the nonces in AggregateInitReq.seq are
-   all distinct.  If two ReportShare messages have the same nonce, then
-   the helper MUST abort with error "unrecognizedMessage".  Next, the
-   helper handles the AggregateInitReq by computing the initial
-   preparation state for each ReportShare in AggregateInitReq.seq as
-   described in Section 4.3.2.2.  It then constructs an AggregateResp:
+   To process the leader's request, the helper first checks that the
+   nonces in AggregateInitReq.seq are all distinct.  If two ReportShare
+   messages have the same nonce, then the helper MUST abort with error
+   "unrecognizedMessage".  Next, the helper handles the AggregateInitReq
+   by computing the initial preparation state for each ReportShare in
+   AggregateInitReq.seq as described in Section 4.3.2.2.  It then
+   constructs an AggregateResp:
 
    struct {
      opaque helper_state<0..2^16>;
      Transition seq<1..2^16-1>;
-     opaque tag[32];
    } AggregateResp;
 
    The first parameter contains the helper's updated state.  The helper
@@ -1233,21 +1223,15 @@ struct {
    The sequence of Transition messages corresponds to the ReportShare
    sequence of the AggregateInitReq.  The order of these sequences MUST
    be the same (i.e., the nonce of the first Transition MUST be the same
-   as first ReportShare and so on).  The tag tag field is an HMAC-SHA256
-   tag over the serialized message, excluding the tag field itself,
-   computed using the agg_auth_key shared by the aggregators.  The
-   helper's response to the leader is an HTTP 200 OK whose body is the
-   AggregateResp.
+   as first ReportShare and so on).  The helper's response to the leader
+   is an HTTP 200 OK whose body is the AggregateResp.
 
-   The leader handles the AggregateResp as follows.  It first verifies
-   the tag.  If this check fails, it MUST abort with error
-   "invalidHmac".
-
-   Next, it checks that the sequence of Transition messages corresponds
-   to the ReportShare sequence of the AggregateInitReq.  If any message
-   appears out of order, is missing, has an unrecognized nonce, or if
-   two messages have the same nonce, then the leader MUST abort with
-   error "unrecognizedMessage".
+   The leader handles the AggregateResp as follows.  It first checks
+   that the sequence of Transition messages corresponds to the
+   ReportShare sequence of the AggregateInitReq.  If any message appears
+   out of order, is missing, has an unrecognized nonce, or if two
+   messages have the same nonce, then the leader MUST abort with error
+   "unrecognizedMessage".
 
    Next, for each Transition, the leader proceeds as described in
    Section 4.3.2.3.  If any state transition results in INVALID, this
@@ -1276,10 +1260,9 @@ struct {
    a POST request to [aggregator]/aggregate with an Aggregate message of
    type agg_cont_req with payload AggregateContinueReq.
 
-   After verifying the authentication tag as described in Section 4.3.4,
-   the helper begins by scanning AggregateContinueReq.seq to check for
-   any reports that may have been dropped by the leader in the previous
-   step.
+   To handle the leader's request, the helper begins by scanning
+   AggregateContinueReq.seq to check for any reports that may have been
+   dropped by the leader in the previous step.
 
    Next, the helper processes the Transition messages from the leader.
    If any message appears out of order or has an unrecognized nonce, or
@@ -1308,7 +1291,6 @@ struct {
      uint64 report_count;
      opaque checksum[32];
      opaque helper_state<0..2^16>;
-     opaque tag[32];
    } AggregateShareReq;
 
    [OPEN ISSUE: consider updating the checksum algorithm to not permit
@@ -1329,23 +1311,15 @@ struct {
       requests from the leader.  [OPEN ISSUE: We may wnat to get rid of
       this.  See issue#185.]
 
-   *  tag is the the HMAC-SHA256 tag computed over the serialized
-      message excluding the tag field itself.  The key that is used is
-      the agg_auth_key shared by the aggregators and configured for the
-      given task.
-
-   After verifying the authentication tag, the helper processes the
-   AggregateShareReq as follows.  It first ensures that the request
-   meets the requirements for batch parameters following the procedure
-   in Section 4.4.1.  If the batch parameters are invalid, then it MUST
-   abort with error "XXX".
+   To handle the leader's request, the helper first ensures that the
+   request meets the requirements for batch parameters following the
+   procedure in Section 4.4.1.  If the batch parameters are invalid,
+   then it MUST abort with error "batchInvalid".
 
    Next, it computes a checksum based on its view of the output shares
    included in the batch window, and checks that the report_count and
    checksum included in the request match its computed values.  If not,
-   then it MUST abort with error "XXX".
-
-   XXX define checksum mismatch error
+   then it MUST abort with error "batchMismatch".
 
    Next, it computes the aggregate share for the batch interval as
    described in Section 4.3.3, obtaining an opaque byte string agg_share
@@ -1368,20 +1342,16 @@ struct {
 
    struct {
        HpkeCiphertext encrypted_aggregate_share;
-       opaque tag[32];
    } AggregateShareResp;
 
    encrypted_aggregate_share.config_id is set to the collector's HPKE
    config ID. encrypted_aggregate_share.enc is set to the encapsulated
    HPKE context enc computed above and
    encrypted_aggregate_share.ciphertext is the ciphertext
-   encrypted_agg_share computed above. tag is an HMAC-SHA256 tag over
-   the serialized message, excluding the tag field itself, computed
-   using the agg_auth_key shared by the aggregators.
+   encrypted_agg_share computed above.
 
-   After verifying the authentication tag as described in Section 4.3.4,
-   the leader uses the HpkeCiphertext to respond to a collect request
-   (see Section 4.4).
+   After receiving the helper's respjonse, the leader uses the
+   HpkeCiphertext to respond to a collect request (see Section 4.4).
 
    The leader MAY make multiple aggregate-share requests for a given
    batch interval and MUST get the same result each time.
