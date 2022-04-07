@@ -1144,7 +1144,6 @@ struct {
 
    struct {
        TaskID task_id;
-       AggregationJobID job_id;
        opaque helper_state<0..2^16>;
        AggregateReqType msg_type;
        select (msg_type) {
@@ -1155,13 +1154,7 @@ struct {
 
    As discussed in Section 4.3, the leader may choose to shard the task
    of aggregating a large number of reports into any number of sub-
-   batches.  The process of aggregating the reports in a leader-defined
-   sub-batch is called an _aggregation job_. An AggregationJobID is a
-   globally unique sequence of bytes chosen by the leader to identify an
-   aggregation job.  It is RECOMMENDED that this be set to a random
-   string output by a cryptographically secure pseudorandom number
-   generator.  The aggregation job ID is used by aggregators to look up
-   preparation state for the reports included in the sub-batch.
+   batches.
 
    Each aggregate request also contains an opaque helper state string.
    This is equal to the helper state string returned by the helper in
