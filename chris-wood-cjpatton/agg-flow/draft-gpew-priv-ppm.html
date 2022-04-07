@@ -2820,7 +2820,6 @@ encrypts it under the collector's HPKE public key as follows:<a href="#section-4
 <pre>
 enc, context = SetupBaseS(pk, CollectReq.task_id ||
                               "ppm-00 aggregate share" || 0x02 || 0x00)
-
 encrypted_agg_share = context.Seal(CollectReq.batch_interval,
                                    agg_share)
 </pre><a href="#section-4.4-11" class="pilcrow">¶</a>
